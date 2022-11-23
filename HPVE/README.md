@@ -1,3 +1,5 @@
-Simple decay management plugin for Auxide full mode.
+# HPVE
+Simple PVE plugin for Auxide full mode.
 
-Prevents decay including building blocks and deployables.
+Prevents player on player damage, building damage, etc.
+Work in progress
