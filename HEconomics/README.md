@@ -1,3 +1,3 @@
-Test plugin to exercise and log activity for all included hooks.
+# HEconomics
 
-Output is logged to TOPLEVEL\auxide\Logs\auxide_YEARMMDD-HH:MM.log
+Partially-working port of Economics plugin
