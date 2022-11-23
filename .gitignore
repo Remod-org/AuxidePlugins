@@ -1,0 +1,7 @@
+/AuxideCompiler
+ThisUsesCostura.txt
+.vs
+bin
+obj
+packages
+/Auxide/Lang.cs
