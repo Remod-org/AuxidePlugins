@@ -1,3 +1,4 @@
-Test plugin to exercise and log activity for all included hooks.
+# Stacks
 
-Output is logged to TOPLEVEL\auxide\Logs\auxide_YEARMMDD-HH:MM.log
+Port of my Stacks plugin to manage stack sizes
+Work in progress
