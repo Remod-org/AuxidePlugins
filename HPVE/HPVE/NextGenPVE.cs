@@ -755,7 +755,7 @@ public class NextGenPVE : RustScript
         {
             BasePlayer hibp = hitinfo.Initiator as BasePlayer;
             if (configData.Options.debug) Utils.DoLog("Checking for god perms");
-            if (hibp != null && Permissions.UserHasPermission(hibp.UserIDString, permNextGenPVEGod))
+            if (hibp != null && Permissions.UserHasPermission(permNextGenPVEGod, hibp.UserIDString))
             {
                 Utils.DoLog("Admin almighty!");
                 return null;
@@ -1585,14 +1585,14 @@ public class NextGenPVE : RustScript
 
     private void CmdUpdateEnts(BasePlayer player, string command, string[] args)
     {
-        if (!Permissions.UserHasPermission(player.displayName, permNextGenPVEAdmin)) { Message(player, "notauthorized"); return; }
+        if (!Permissions.UserHasPermission(permNextGenPVEAdmin, player.UserIDString)) { Message(player, "notauthorized"); return; }
         UpdateEnts();
     }
 
     private void CmdNextGenPVEDrop(BasePlayer player, string command, string[] args)
     {
         if (configData.Options.AllowDropDatabase) return;
-        if (!Permissions.UserHasPermission(player.displayName, permNextGenPVEAdmin)) { Message(player, "notauthorized"); return; }
+        if (!Permissions.UserHasPermission(permNextGenPVEAdmin, player.UserIDString)) { Message(player, "notauthorized"); return; }
 
         LoadDefaultEntities();
         LoadDefaultRules();
@@ -1606,7 +1606,7 @@ public class NextGenPVE : RustScript
 
     private void CmdNextGenPVEenable(BasePlayer player, string command, string[] args)
     {
-        if (!Permissions.UserHasPermission(player.displayName, permNextGenPVEAdmin)) { Message(player, "notauthorized"); return; }
+        if (!Permissions.UserHasPermission(permNextGenPVEAdmin, player.UserIDString)) { Message(player, "notauthorized"); return; }
 
         enabled = !enabled;
         if (args.Length > 0)
@@ -1621,7 +1621,7 @@ public class NextGenPVE : RustScript
 
     private void CmdNextGenPVElog(BasePlayer player, string command, string[] args)
     {
-        if (!Permissions.UserHasPermission(player.displayName, permNextGenPVEAdmin)) { Message(player, "notauthorized"); return; }
+        if (!Permissions.UserHasPermission(permNextGenPVEAdmin, player.UserIDString)) { Message(player, "notauthorized"); return; }
 
         dolog = !dolog;
         Message(player, "logging", dolog.ToString());
@@ -1629,7 +1629,7 @@ public class NextGenPVE : RustScript
 
     private void CmdNextGenPVEDebug(BasePlayer player, string command, string[] args)
     {
-        if (!Permissions.UserHasPermission(player.displayName, permNextGenPVEAdmin)) { Message(player, "notauthorized"); return; }
+        if (!Permissions.UserHasPermission(permNextGenPVEAdmin, player.UserIDString)) { Message(player, "notauthorized"); return; }
 
         configData.Options.debug = !configData.Options.debug;
         SaveConfig(configData);
@@ -1638,7 +1638,7 @@ public class NextGenPVE : RustScript
 
     //private void CmdNextGenPVEbackup(BasePlayer player, string command, string[] args)
     //{
-    //    if (!Permissions.UserHasPermission(player.displayName, permNextGenPVEAdmin)) { Message(player, "notauthorized"); return; }
+    //    if (!Permissions.UserHasPermission(permNextGenPVEAdmin, player.UserIDString)) { Message(player, "notauthorized"); return; }
 
     //    string backupfile = "nextgenpve_" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + ".db";
     //    if (args.Length > 1)
