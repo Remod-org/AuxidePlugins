@@ -159,7 +159,7 @@ public class HLootProtect : RustScript
         if (CanAccess(entity.ShortPrefabName, player.userID, entity.OwnerID)) return null;
         if (CheckShare(entity, player.userID)) return null;
 
-        return null;
+        return true;
     }
 
     public object CanLoot(StorageContainer container, BasePlayer player, string panelName)

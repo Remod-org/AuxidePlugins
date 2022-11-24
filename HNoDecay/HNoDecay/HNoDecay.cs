@@ -1,19 +1,31 @@
 ﻿using Auxide;
+using ProtoBuf;
+using Harmony;
 using Rust;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection.Emit;
+using System;
+using System.IO;
 
 public class HNoDecay : RustScript
 {
+    #region Harmony
+    HarmonyInstance _harmony;
+    #endregion
+
     private static ConfigData configData;
 
     public HNoDecay()
     {
         Author = "RFC1920";
-        Version = new VersionNumber(1, 0, 2);
+        Version = new VersionNumber(1, 0, 3);
     }
 
     public class ConfigData
     {
         public bool debug;
+        public bool disableTCWarning;
         public bool blockBuildingDecay;
         public bool blockDeployableDecay;
         public bool blockWoodFromTC;
@@ -25,6 +37,18 @@ public class HNoDecay : RustScript
     public override void Initialize()
     {
         LoadConfig();
+        if (configData.disableTCWarning)
+        {
+            _harmony = HarmonyInstance.Create(Name + "PATCH");
+            Type patchType = AccessTools.Inner(typeof(HNoDecay), "BNToStreamPatch");
+            new PatchProcessor(_harmony, patchType, HarmonyMethod.Merge(patchType.GetHarmonyMethods())).Patch();
+        }
+    }
+
+    public override void Dispose()
+    {
+        if (configData.disableTCWarning) _harmony.UnpatchAll(Name + "PATCH");
+        base.Dispose();
     }
 
     public void LoadConfig()
@@ -95,5 +119,75 @@ public class HNoDecay : RustScript
             }
         }
         return null;
+    }
+
+    [HarmonyPatch(typeof(BaseNetworkable), "ToStream", new Type[] { typeof(Stream), typeof(BaseNetworkable.SaveInfo) })]
+    public static class BNToStreamPatch
+    {
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instr, ILGenerator il)
+        {
+            List<CodeInstruction> codes = new List<CodeInstruction>(instr);
+            int startIndex = -1;
+            int fixJump = -1;
+            Label notBPLabel = new Label();
+            Label newLabel = il.DefineLabel();
+
+            for (int i = 0; i < codes.Count; i++)
+            {
+                if (codes[i].opcode == OpCodes.Ldfld && codes[i + 1].opcode == OpCodes.Brtrue)
+                {
+                    fixJump = i + 1;
+                }
+
+                if (codes[i].opcode == OpCodes.Ldarg_2 && codes[i + 1].opcode == OpCodes.Ldfld && codes[i + 2].opcode == OpCodes.Ldarg_1)
+                {
+                    startIndex = i;
+                    notBPLabel = codes[i].labels[0];
+                    break;
+                }
+            }
+
+            if (startIndex > -1)
+            {
+                List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>()
+            {
+                // is type of BuildingPrivlidge?
+                new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(OpCodes.Isinst, typeof(BuildingPrivlidge)),
+                new CodeInstruction(OpCodes.Ldnull),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(UnityEngine.Object), "op_Inequality")),
+                new CodeInstruction(OpCodes.Brfalse_S, notBPLabel),
+
+                // saveInfo.msg.buildingPrivilege.protectedMinutes = 4400;
+                new CodeInstruction(OpCodes.Ldarg_2),
+                new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(BaseNetworkable.SaveInfo), "msg")),
+                new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(Entity), "buildingPrivilege")),
+                new CodeInstruction(OpCodes.Ldc_R4, 4400.1f),
+                new CodeInstruction(OpCodes.Stfld, AccessTools.Field(typeof(BuildingPrivilege), "protectedMinutes")),
+                // saveInfo.msg.buildingPrivilege.upkeepPeriodMinutes = 4400;
+                new CodeInstruction(OpCodes.Ldarg_2),
+                new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(BaseNetworkable.SaveInfo), "msg")),
+                new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(Entity), "buildingPrivilege")),
+                new CodeInstruction(OpCodes.Ldc_R4, 4400.1f),
+                new CodeInstruction(OpCodes.Stfld, AccessTools.Field(typeof(BuildingPrivilege), "upkeepPeriodMinutes"))
+            };
+                codes.InsertRange(startIndex, instructionsToInsert);
+                codes[startIndex].labels.Add(newLabel);
+            }
+
+            if (fixJump > -1)
+            {
+                // Fix jump from saveInfo.msg.baseNetworkable == null to avoid skipping our new code
+                List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>()
+            {
+                new CodeInstruction(OpCodes.Brtrue_S, newLabel)
+            };
+                codes.RemoveRange(fixJump, 1);
+                codes.InsertRange(fixJump, instructionsToInsert);
+            }
+
+            return codes.AsEnumerable();
+        }
     }
 }

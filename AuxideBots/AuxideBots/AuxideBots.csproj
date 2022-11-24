@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{14D523C1-D24F-4D50-BBDA-9FD42E848997}</ProjectGuid>
+    <ProjectGuid>{BBEBA5C9-95AA-4592-B740-B16D21DE48B7}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>HPVE</RootNamespace>
-    <AssemblyName>NextGenPVE</AssemblyName>
+    <RootNamespace>Auxide</RootNamespace>
+    <AssemblyName>AuxideBots</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -421,8 +421,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HPVE.cs" />
-    <Compile Include="NextGenPVE.cs" />
+    <Compile Include="AuxideBots.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,5 +1,6 @@
 ﻿using Auxide;
 using Rust;
+using System.Collections.Generic;
 
 public class HPVE : RustScript
 {
@@ -19,11 +20,47 @@ public class HPVE : RustScript
         public bool allowAdminPVP;
         public bool allowFriendlyFire;
         public bool allowDamageToNPC;
+        public Options Options;
+    }
+
+    public class Options
+    {
+        public float protectedDays;
+        //public bool purgeEnabled;
+        //public string purgeStart;
+        //public string purgeEnd;
+        //public string purgeStartMessage;
+        //public string purgeEndMessage;
+        //public bool autoCalcPurge;
+        //public int autoCalcPurgeDays;
+        //public bool useSchedule;
+        public bool useMessageBroadcast;
+        public bool useRealTime;
+        public bool useTeams;
+        public bool AllowDropDatabase;
+
+        public bool NPCAutoTurretTargetsPlayers;
+        public bool NPCAutoTurretTargetsNPCs;
+        public bool AutoTurretTargetsPlayers;
+        public bool HeliTurretTargetsPlayers;
+        public bool AutoTurretTargetsNPCs;
+        public bool NPCSamSitesIgnorePlayers;
+        public bool SamSitesIgnorePlayers;
+        public bool AllowSuicide;
+        public bool AllowFriendlyFire;
+        public bool TrapsIgnorePlayers;
+        public bool HonorBuildingPrivilege;
+        public bool UnprotectedBuildingDamage;
+        public bool UnprotectedDeployableDamage;
+        public bool TwigDamage;
+        public bool HonorRelationships;
+        public bool BlockScrapHeliFallDamage;
     }
 
     public override void Initialize()
     {
         Utils.DoLog("HPVE loading...");
+        if (ConVar.Server.pve) ConsoleSystem.Run(ConsoleSystem.Option.Server.FromServer(), "server.pve 0");
         LoadConfig();
     }
 
@@ -44,7 +81,28 @@ public class HPVE : RustScript
             debug = false,
             allowAdminPVP = false,
             allowFriendlyFire = false,
-            allowDamageToNPC = true
+            allowDamageToNPC = true,
+            Options = new Options()
+            {
+                useTeams = true,
+                AllowDropDatabase = false,
+                AllowSuicide = true,
+                AutoTurretTargetsNPCs = true,
+                AutoTurretTargetsPlayers = true,
+                NPCAutoTurretTargetsNPCs = true,
+                NPCAutoTurretTargetsPlayers = true,
+                BlockScrapHeliFallDamage = true,
+                HonorBuildingPrivilege = true,
+                AllowFriendlyFire = false,
+                HeliTurretTargetsPlayers = true,
+                HonorRelationships = true,
+                NPCSamSitesIgnorePlayers = false,
+                SamSitesIgnorePlayers = false,
+                TrapsIgnorePlayers = false,
+                UnprotectedBuildingDamage = true,
+                UnprotectedDeployableDamage = true,
+                useMessageBroadcast = false
+            }
         };
 
         config.WriteObject(configData);
@@ -54,7 +112,20 @@ public class HPVE : RustScript
     {
         if (info == null) return null;
         if (entity == null) return null;
-        if (info.damageTypes.GetMajorityDamageType() == DamageType.Decay) return null;
+        string majority = info.damageTypes.GetMajorityDamageType().ToString();
+        if (majority == "Decay") return null;
+
+        if (configData.debug) Utils.DoLog("ENTRY:");
+        if (configData.debug) Utils.DoLog("Checking for fall damage");
+        if (majority == "Fall" && info.Initiator == null)
+        {
+            if (configData.debug) Utils.DoLog($"Null initiator for attack on {entity.ShortPrefabName} by Fall");
+            if (BlockFallDamage(entity))
+            {
+                if (configData.debug) Utils.DoLog(":EXIT");
+                return true;
+            }
+        }
 
         if (info?.WeaponPrefab != null)// && info?.WeaponPrefab is TimedExplosive)
         {
@@ -170,6 +241,21 @@ public class HPVE : RustScript
                 info.damageTypes.ScaleAll(0);
             }
         }
+    }
+    private bool BlockFallDamage(BaseCombatEntity entity)
+    {
+        // Special case where attack by scrapheli initiates fall damage on a player.  This was often used to kill players and bypass the rules.
+        List<BaseEntity> ents = new List<BaseEntity>();
+        Vis.Entities(entity.transform.position, 5, ents);
+        foreach (BaseEntity ent in ents)
+        {
+            if (ent.ShortPrefabName == "scraptransporthelicopter" && configData.Options.BlockScrapHeliFallDamage)
+            {
+                DoLog("Fall caused by scrapheli.  Blocking...");
+                return true;
+            }
+        }
+        return false;
     }
 }
 //if (entity != null && hitInfo.damageTypes.Has(DamageType.Decay) && (configData.blockBuildingDecay || configData.blockDeployableDecay))
