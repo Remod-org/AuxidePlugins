@@ -76,6 +76,8 @@ public class NextGenPVE : RustScript
         //Instance = this;
         //Utils.DoLog("Creating database connection for main thread.");
 
+        Auxide.Scripting.DynamicConfigFile dataFile = data.GetDatafile("nextgenpve");
+        dataFile.Save();
         connStr = $"Data Source={Path.Combine(data.Directory, "nextgenpve.db")};";
 
         Permissions.RegisterPermission(Name, permNextGenPVEUse);
@@ -1114,7 +1116,7 @@ public class NextGenPVE : RustScript
 
     private void MessageToAll(string key, string ruleset)
     {
-        if (!configData.Options.useMessageBroadcast && !configData.Options.useGUIAnnouncements) return;
+        if (!configData.Options.useMessageBroadcast) return;
         foreach (BasePlayer player in BasePlayer.activePlayerList)
         {
             if (configData.Options.useMessageBroadcast)
@@ -1685,11 +1687,8 @@ public class NextGenPVE : RustScript
             {
                 protectedDays = 0f,
                 useSchedule = false,
-                useGUIAnnouncements = false,
                 useMessageBroadcast = false,
                 useRealTime = false,
-                useFriends = false,
-                useClans = false,
                 useTeams = false,
                 AllowCustomEdit = false,
                 AllowDropDatabase = false,
@@ -1738,11 +1737,8 @@ public class NextGenPVE : RustScript
         public bool autoCalcPurge;
         public int autoCalcPurgeDays;
         public bool useSchedule;
-        public bool useGUIAnnouncements;
         public bool useMessageBroadcast;
         public bool useRealTime;
-        public bool useFriends;
-        public bool useClans;
         public bool useTeams;
         public bool AllowCustomEdit;
         public bool AllowDropDatabase;
