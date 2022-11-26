@@ -126,10 +126,6 @@ public class HTeleport : RustScript
         public System.Timers.Timer timer;
     }
 
-    //public void LoadLang()
-    //{
-    //    lang.ReadObject<>(Name, "en");
-    //}
     public void LoadData()
     {
         playerHomes = data.ReadObject<Dictionary<ulong, HomeData>>(Name);
@@ -268,7 +264,7 @@ public class HTeleport : RustScript
     }
     private void Teleport(BasePlayer player, Vector3 target)
     {
-        Utils.DoLog($"Teleporting {player.displayName} to {target}");
+        if (configData.debug) Utils.DoLog($"Teleporting {player.displayName} to {target}");
         if (player.net?.connection != null)
         {
             player.SetPlayerFlag(BasePlayer.PlayerFlags.ReceivingSnapshot, true);
@@ -280,8 +276,7 @@ public class HTeleport : RustScript
         player.UpdateNetworkGroup();
         player.StartSleeping();
         player.SendNetworkUpdateImmediate(false);
-        Utils.DoLog("Done!");
-        // Kicked here with either one of these...
+        if (configData.debug) Utils.DoLog("Done!");
         if (player.net?.connection != null) player.ClientRPCPlayer(null, player, "StartLoading");
         //player.EndSleeping();
     }

@@ -7,7 +7,6 @@ using Mono.Data.Sqlite;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Text;
-using System.Timers;
 using Auxide;
 
 public class NextGenPVE : RustScript
@@ -48,11 +47,12 @@ public class NextGenPVE : RustScript
     private const string NGPVERULESELECT = "nextgenpve.selectrule";
     private const string NGPVERULEEXCLUSIONS = "nextgenpve.exclusions";
     private const string NGPVECUSTOMSELECT = "nextgenpve.customsel";
+
     public NextGenPVE()
     {
         Author = "RFC1920";
         Description = "NextGenPVE for Auxide";
-        Version = new VersionNumber(1, 0, 2);
+        Version = new VersionNumber(1, 0, 3);
     }
     #endregion
 
@@ -96,9 +96,9 @@ public class NextGenPVE : RustScript
         //if (configData.Options.useSchedule) RunSchedule(true);
     }
 
-    private void OnUserConnected(BasePlayer player) => OnUserDisconnected(player);
+    public void OnUserConnected(BasePlayer player) => OnUserDisconnected(player);
 
-    private void OnUserDisconnected(BasePlayer player)
+    public void OnUserDisconnected(BasePlayer player)
     {
         //if (configData.Options.usePlayerDatabase) return;
         long lc;
@@ -134,7 +134,7 @@ public class NextGenPVE : RustScript
         return null;
     }
 
-    private void OnNewSave()
+    public void OnNewSave()
     {
         Utils.DoLog("Wipe detected.  Clearing zone maps...");
         ngpvezonemaps = new Dictionary<string, NextGenPVEZoneMap>();
@@ -291,7 +291,7 @@ public class NextGenPVE : RustScript
         }, Name);
     }
 
-    private void Unload()
+    public void Unload()
     {
         //foreach (BasePlayer player in BasePlayer.activePlayerList)
         //{
@@ -3656,8 +3656,10 @@ public class NextGenPVE : RustScript
                 cmd.CommandText += "INSERT INTO ngpve_entities VALUES('resource', 'HorseCorpse', 0);";
                 cmd.CommandText += "INSERT INTO ngpve_entities VALUES('resource', 'LockedByEntCrate', 0);";
                 cmd.CommandText += "INSERT INTO ngpve_entities VALUES('resource', 'LootContainer', 0);";
+                cmd.CommandText += "INSERT INTO ngpve_entities VALUES('resource', 'OreResourceEntity', 0);";
                 cmd.CommandText += "INSERT INTO ngpve_entities VALUES('resource', 'ResourceEntity', 0);";
                 cmd.CommandText += "INSERT INTO ngpve_entities VALUES('resource', 'StorageContainer', 0);";
+                cmd.CommandText += "INSERT INTO ngpve_entities VALUES('resource', 'TreeEntity', 0);";
                 cmd.CommandText += "INSERT INTO ngpve_entities VALUES('scrapcopter', 'ScrapTransportHelicopter', 0);";
                 cmd.CommandText += "INSERT INTO ngpve_entities VALUES('trap', 'AutoTurret', 0);"; // AutoTurret when attacked
                 cmd.CommandText += "INSERT INTO ngpve_entities VALUES('trap', 'BaseProjectile', 0);"; // AutoTurret weapon
