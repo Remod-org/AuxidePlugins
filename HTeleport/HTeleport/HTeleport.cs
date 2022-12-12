@@ -16,16 +16,6 @@ public class HTeleport : RustScript
         Version = new VersionNumber(1, 0, 4);
     }
 
-    public string Lang(string input, params object[] args)
-    {
-        return string.Format(lang.Get(input), args);
-    }
-
-    public void Message(BasePlayer player, string input, params object[] args)
-    {
-        Utils.SendReply(player, string.Format(lang.Get(input), args));
-    }
-
     public class HomeData
     {
         [JsonProperty("l")]
@@ -252,7 +242,7 @@ public class HTeleport : RustScript
     private void TeleportCountdownElapsed(object source, System.Timers.ElapsedEventArgs e)
     {
         //KeyValuePair<ulong, TpTimer> ptp = playerTP.Where(x => x.Value.timer == source).ToList().First();
-        foreach (var ptp in playerTP)
+        foreach (KeyValuePair<ulong, TpTimer> ptp in playerTP)
         {
             if (ptp.Value.timer == source)
             {
@@ -284,27 +274,28 @@ public class HTeleport : RustScript
     public void FindMonuments()
     {
         if (configData.debug) Utils.DoLog("Looking for monuments...");
+        Vector3 mt = Vector3.zero;
+        Vector3 bbq = Vector3.zero;
+
         foreach (MonumentInfo monument in Object.FindObjectsOfType<MonumentInfo>())
         {
             if (monument.name.Contains("compound"))
             {
                 if (configData.debug) Utils.DoLog($"Found compound at {monument.transform.position}");
                 configData.server.Locations["outpost"] = monument.transform.position;
-                Vector3 mt = Vector3.zero;
-                Vector3 bbq = Vector3.zero;
                 foreach (Collider coll in Physics.OverlapSphere(monument.transform.position, 100, LayerMask.GetMask("Deployed")))
                 {
                     BaseEntity entity = coll.gameObject.GetComponent<BaseEntity>();
                     if (entity == null) continue;
-                    //if (configData.debug) Utils.DoLog($"Found entity: {entity.ShortPrefabName} {entity.PrefabName}");
-                    if (entity.PrefabName.Contains("marketterminal") && mt == Vector3.zero)
+                    if (configData.debug) Utils.DoLog($"Found entity: {entity.ShortPrefabName}");
+                    if (entity.ShortPrefabName.Equals("marketterminal") && mt == Vector3.zero)
                     {
-                        if (configData.debug) Utils.DoLog($"Found marketterminal at compound at {entity.transform.position}");
+                        if (configData.debug) Utils.DoLog($"  Found marketterminal at compound at {entity.transform.position}");
                         mt = entity.transform.position;
                     }
-                    else if (entity.PrefabName.Contains("bbq"))
+                    else if (entity.ShortPrefabName.Contains("bbq"))
                     {
-                        if (configData.debug) Utils.DoLog($"Found bbq at compound at {entity.transform.position}");
+                        if (configData.debug) Utils.DoLog($"  Found bbq at compound at {entity.transform.position}");
                         bbq = entity.transform.position;
                     }
                 }
@@ -316,16 +307,18 @@ public class HTeleport : RustScript
             }
             else if (monument.name.Contains("bandit"))
             {
+                mt = Vector3.zero;
                 if (configData.debug) Utils.DoLog($"Found bandit at {monument.transform.position}");
                 configData.server.Locations["bandit"] = monument.transform.position;
                 foreach (Collider coll in Physics.OverlapSphere(monument.transform.position, 150, LayerMask.GetMask("Deployed")))
                 {
                     BaseEntity entity = coll.gameObject.GetComponent<BaseEntity>();
                     if (entity == null) continue;
-                    //if (configData.debug) Utils.DoLog($"Found entity: {entity.ShortPrefabName} {entity.PrefabName}");
-                    if (entity.PrefabName.Contains("marketterminal"))
+                    if (configData.debug) Utils.DoLog($"Found entity: {entity.ShortPrefabName}");
+                    if (entity.ShortPrefabName.Equals("marketterminal") && mt == Vector3.zero)
                     {
-                        if (configData.debug) Utils.DoLog($"Found marketterminal at bandit at {entity.transform.position}");
+                        mt = entity.transform.position;
+                        if (configData.debug) Utils.DoLog($"  Found marketterminal at bandit at {entity.transform.position}");
                         configData.server.Locations["bandit"] = entity.transform.position + new Vector3(3f, 0.1f, 3f);
                     }
                 }

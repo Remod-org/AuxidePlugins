@@ -13,18 +13,6 @@ public class HStacks : RustScript
     private ConfigData configData;
     #endregion
 
-    #region Message
-    public string Lang(string input, params object[] args)
-    {
-        return string.Format(lang.Get(input), args);
-    }
-
-    public void Message(BasePlayer player, string input, params object[] args)
-    {
-        Utils.SendReply(player, string.Format(lang.Get(input), args));
-    }
-    #endregion
-
     public override void LoadDefaultMessages()
     {
         lang.RegisterMessages(new Dictionary<string, string>
@@ -292,7 +280,6 @@ public class HStacks : RustScript
         }
     }
 
-
     private void LoadData()
     {
         DoLog("LoadData called");
@@ -308,7 +295,7 @@ public class HStacks : RustScript
         //        ItemDefinition item = itemenum?.FirstOrDefault();
         //        if (item != null)
         //        {
-        //            DoLog($"Setting stack size for {item?.name} to {items.Value.ToString()}");
+        //            DoLog($"Setting stack size for {item?.name} to {items.Value}");
         //            item.stackable = items.Value;
         //        }
         //    }

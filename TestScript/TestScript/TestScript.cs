@@ -3,7 +3,7 @@ using Auxide;
 public class TestScript : RustScript
 {
     private static ConfigData configData;
-    public bool enable = true;
+    public bool enableme = true;
 
 	public TestScript()
 	{
@@ -11,21 +11,26 @@ public class TestScript : RustScript
         Version = new VersionNumber(1, 0, 1);
     }
 
+    public void OnPluginLoaded(IScriptReference script)
+    {
+        Utils.DoLog($"{script.Name} Loaded");
+    }
+
+    public void OnServerInitialized()
+    {
+        Utils.DoLog($"{Name} OSE");
+    }
+
     public override void Initialize()
 	{
         LoadConfig();
-        enable = configData.Enable;
+        enableme = configData.Enable;
         Utils.DoLog("Let's test some hooks!");
 	}
 
-    public string Lang(string input, params object[] args)
+    public override void Dispose()
     {
-        return string.Format(lang.Get(input), args);
-    }
-
-    public void Message(BasePlayer player, string input, params object[] args)
-    {
-        Utils.SendReply(player, string.Format(lang.Get(input), args));
+        base.Dispose();
     }
 
     public class ConfigData
@@ -59,7 +64,7 @@ public class TestScript : RustScript
 
     public object CanToggleSwitch(BaseOven oven, BasePlayer player)
     {
-        if (!enable) return null;
+        if (!enableme) return null;
         if (oven.OwnerID != 0 && player.userID != oven.OwnerID && !Utils.IsFriend(player.userID, oven.OwnerID))
         {
             Utils.DoLog($"{player.userID} BLOCKED FROM toggling oven {oven.ShortPrefabName}");
@@ -71,7 +76,7 @@ public class TestScript : RustScript
 
     public object CanToggleSwitch(ElectricSwitch sw, BasePlayer player)
     {
-        if (!enable) return null;
+        if (!enableme) return null;
 		if (sw.OwnerID != 0 && player.userID != sw.OwnerID && !Utils.IsFriend(player.userID, sw.OwnerID))
 		{
             Utils.DoLog($"{player.userID} BLOCKED FROM toggling oven {sw.ShortPrefabName}");
@@ -84,7 +89,7 @@ public class TestScript : RustScript
     // Not yet working - called but cannot cancel/block?
     public object CanMount(BaseMountable entity, BasePlayer player)
     {
-        if (!enable) return null;
+        if (!enableme) return null;
         if (entity.OwnerID != 0 && player.userID != entity.OwnerID && !Utils.IsFriend(player.userID, entity.OwnerID))
 		{
             Utils.DoLog($"{player.userID} BLOCKED FROM mounting {entity.ShortPrefabName}");
@@ -96,7 +101,7 @@ public class TestScript : RustScript
 
     public void OnMounted(BaseMountable entity, BasePlayer player)
     {
-        if (!enable) return;
+        if (!enableme) return;
         if (entity == null) return;
         if (player == null) return;
         Utils.DoLog($"{player.userID} mounted {entity.ShortPrefabName}");
@@ -104,7 +109,7 @@ public class TestScript : RustScript
 
     public object CanLoot(StorageContainer container, BasePlayer player, string panelName)
     {
-        if (!enable) return null;
+        if (!enableme) return null;
         if (player == null || container == null) return null;
         BaseEntity ent = container?.GetComponentInParent<BaseEntity>();
         if (ent == null) return null;
@@ -115,7 +120,7 @@ public class TestScript : RustScript
 
     public void OnLooted(BaseEntity entity, BasePlayer player)
     {
-        if (!enable) return;
+        if (!enableme) return;
         if (entity == null) return;
         if (player == null) return;
         Utils.DoLog($"{player.userID} looted {entity.ShortPrefabName}");
@@ -123,26 +128,26 @@ public class TestScript : RustScript
 
     public void OnPlayerJoin(BasePlayer player)
     {
-        if (!enable) return;
+        if (!enableme) return;
         Utils.DoLog($"{player.userID} connected.");
     }
 
     public void OnPlayerLeave(BasePlayer player)
     {
-        if (!enable) return;
+        if (!enableme) return;
         Utils.DoLog($"{player.userID} disconnected.");
     }
 
     public object OnTakeDamage(BaseCombatEntity entity, HitInfo hitInfo)
     {
-        if (!enable) return null;
-        Utils.DoLog($"OnTakeDamage called for {hitInfo.damageTypes.GetMajorityDamageType()}.");
+        if (!enableme) return null;
+        Utils.DoLog($"OnTakeDamage called for {hitInfo.damageTypes.GetMajorityDamageType()} attacking {entity.ShortPrefabName}.");
         return null;
     }
 
     public object OnConsoleCommand(string command, bool isServer)
     {
-        if (!enable) return null;
+        if (!enableme) return null;
         Utils.DoLog($"OnConsoleCommand called for '{command}' with isServer={isServer}");
         if (command == "testfail") return false;
         return null;
@@ -150,7 +155,7 @@ public class TestScript : RustScript
 
     public ItemContainer.CanAcceptResult? CanAcceptItem(ItemContainer container, Item item, int targetPos)
     {
-        if (!enable) return null;
+        if (!enableme) return null;
         BaseEntity ent = container?.entityOwner;
         Utils.DoLog($"CanAcceptItem called for '{ent?.ShortPrefabName}', item '{item?.info.displayName.english}', AND targetPos='{targetPos}'");
         return null;
@@ -158,7 +163,7 @@ public class TestScript : RustScript
 
     public object OnConsoleCommand(ConsoleSystem.Arg arg)
     {
-        if (!enable) return null;
+        if (!enableme) return null;
         string pname = arg.GetString(0);
         BasePlayer player = BasePlayer.Find(pname);
         string arginfo = string.Join(",", arg);
@@ -168,16 +173,16 @@ public class TestScript : RustScript
 
     public void OnChatCommand(BasePlayer player, string command, string[] args = null)
     {
-        if (!enable) return;
+        if (!enableme) return;
         string arginfo = string.Join(",", args);
         Utils.DoLog($"OnChatCommand called for '{command}' with args='{arginfo}'");
         switch (command)
         {
             case "ttoggle":
-                enable = !enable;
-                configData.Enable = enable;
+                enableme = !enableme;
+                configData.Enable = enableme;
                 SaveConfig(configData);
-                Message(player, enable ? "TestScript enabled" : "TestScript disabled");
+                Message(player, enableme ? "TestScript enabled" : "TestScript disabled");
                 break;
         }
     }

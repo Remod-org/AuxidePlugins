@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("TestScript")]
-[assembly: AssemblyDescription("Check and log activity from all Auxide hooks")]
+[assembly: AssemblyTitle("RSTest")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Remod")]
-[assembly: AssemblyProduct("TestScript")]
+[assembly: AssemblyProduct("RSTest")]
 [assembly: AssemblyCopyright("Copyright ©2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

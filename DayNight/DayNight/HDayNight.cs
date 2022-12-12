@@ -57,11 +57,6 @@ public class HDayNight : RustScript
         limitTimer = new System.Timers.Timer();
     }
 
-    //public void LoadLang()
-    //{
-    //    lang.ReadObject<>(Name, "en");
-    //}
-
     private void StartTimer()
     {
         limitCleared = false;

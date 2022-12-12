@@ -30,12 +30,12 @@ public class NextGenPVE : RustScript
     //private string TextColor = "Red";
 
     //private static NextGenPVE Instance;
-    //private readonly string logfilename = "log";
+    private readonly string logfilename = "log";
     private bool dolog;
     private bool enabled = true;
     private bool inPurge;
     private bool purgeLast;
-    //private Timer scheduleTimer;
+    private Timer scheduleTimer;
     private const string NGPVERULELIST = "nextgenpve.rulelist";
     private const string NGPVEEDITRULESET = "nextgenpve.ruleseteditor";
     private const string NGPVERULEEDIT = "nextgenpve.ruleeditor";
@@ -57,16 +57,6 @@ public class NextGenPVE : RustScript
     #endregion
 
     #region Message
-    public string Lang(string input, params object[] args)
-    {
-        return string.Format(lang.Get(input), args);
-    }
-
-    public void Message(BasePlayer player, string input, params object[] args)
-    {
-        Utils.SendReply(player, string.Format(lang.Get(input), args));
-    }
-
     private void LMessage(BasePlayer player, string key, params object[] args) => Utils.SendReply(player, Lang(key, args));
     #endregion
 
@@ -118,7 +108,7 @@ public class NextGenPVE : RustScript
     {
         if (command != "pverule" && isopen.Contains(player.userID))
         {
-            if (configData.Options.debug) Utils.DoLog($"OnPlayerCommand: {command} BLOCKED");
+            if (configData.Options.debug) DoLog($"OnPlayerCommand: {command} BLOCKED");
             return true;
         }
         return null;
@@ -128,7 +118,7 @@ public class NextGenPVE : RustScript
     {
         if (command != "pverule" && isopen.Contains(player.userID))
         {
-            if (configData.Options.debug) Utils.DoLog($"OnPlayerCommand: {command} BLOCKED");
+            if (configData.Options.debug) DoLog($"OnPlayerCommand: {command} BLOCKED");
             return true;
         }
         return null;
@@ -308,7 +298,7 @@ public class NextGenPVE : RustScript
         //    CuiHelper.DestroyUi(player, NGPVECUSTOMSELECT);
         //}
 
-        //scheduleTimer?.Destroy();
+        scheduleTimer?.Stop();
         sqlConnection.Close();
     }
 
@@ -705,64 +695,64 @@ public class NextGenPVE : RustScript
         string majority = hitinfo.damageTypes.GetMajorityDamageType().ToString();
         if (majority == "Decay") return null;
 
-        if (configData.Options.debug) Utils.DoLog("ENTRY:");
-        if (configData.Options.debug) Utils.DoLog("Checking for fall damage");
+        if (configData.Options.debug) DoLog("ENTRY:");
+        if (configData.Options.debug) DoLog("Checking for fall damage");
         if (majority == "Fall" && hitinfo.Initiator == null)
         {
             DoLog($"Null initiator for attack on {entity.ShortPrefabName} by Fall");
             if (BlockFallDamage(entity))
             {
-                if (configData.Options.debug) Utils.DoLog(":EXIT");
+                if (configData.Options.debug) DoLog(":EXIT");
                 return true;
             }
         }
 
-        if (configData.Options.debug) Utils.DoLog("Calling external damage hook");
-        try
-        {
-            object CanTakeDamage = BroadcastReturn("CanEntityTakeDamage", new object[] { entity, hitinfo });
-            if (CanTakeDamage != null && CanTakeDamage is bool && (bool)CanTakeDamage)
-            {
-                if (configData.Options.debug) Utils.DoLog("Calling external damage hook PASSED: ALLOW\n:EXIT");
-                return null;
-            }
-        }
-        catch
-        {
-            if (configData.Options.debug) Utils.DoLog("Calling external damage hook FAILED");
-        }
+        //if (configData.Options.debug) DoLog("Calling external damage hook");
+        //try
+        //{
+        //    object CanTakeDamage = BroadcastReturn("CanEntityTakeDamage", new object[] { entity, hitinfo });
+        //    if (CanTakeDamage != null && CanTakeDamage is bool && (bool)CanTakeDamage)
+        //    {
+        //        if (configData.Options.debug) DoLog("Calling external damage hook PASSED: ALLOW\n:EXIT");
+        //        return null;
+        //    }
+        //}
+        //catch
+        //{
+        //    if (configData.Options.debug) DoLog("Calling external damage hook FAILED");
+        //}
 
         string stype; string ttype;
         bool canhurt;
         if (IsMLRS(hitinfo))
         {
-            if (configData.Options.debug) Utils.DoLog($"attacker prefab: {hitinfo.WeaponPrefab?.ShortPrefabName}, victim prefab: {entity.ShortPrefabName}");
-            if (configData.Options.debug) Utils.DoLog("Calling EvaluateRulesets: MLRS");
+            if (configData.Options.debug) DoLog($"attacker prefab: {hitinfo.WeaponPrefab?.ShortPrefabName}, victim prefab: {entity.ShortPrefabName}");
+            if (configData.Options.debug) DoLog("Calling EvaluateRulesets: MLRS");
             canhurt = EvaluateRulesets(hitinfo.WeaponPrefab, entity, out stype, out ttype);
         }
         else
         {
-            if (configData.Options.debug) Utils.DoLog($"attacker prefab: {hitinfo.Initiator?.ShortPrefabName}, victim prefab: {entity.ShortPrefabName}");
-            if (configData.Options.debug) Utils.DoLog("Calling EvaluateRulesets: Standard");
+            if (configData.Options.debug) DoLog($"attacker prefab: {hitinfo.Initiator?.ShortPrefabName}, victim prefab: {entity.ShortPrefabName}");
+            if (configData.Options.debug) DoLog("Calling EvaluateRulesets: Standard");
             canhurt = EvaluateRulesets(hitinfo.Initiator, entity, out stype, out ttype);
         }
         if (stype.Length == 0 && ttype.Length == 0)
         {
-            if (configData.Options.debug) Utils.DoLog("Calling EvaluateRulesets DETECTION FAILED");
+            if (configData.Options.debug) DoLog("Calling EvaluateRulesets DETECTION FAILED");
             return null;
         }
-        if (configData.Options.debug) Utils.DoLog("Calling EvaluateRulesets PASSED");
+        if (configData.Options.debug) DoLog("Calling EvaluateRulesets PASSED");
 
         if (stype == "BasePlayer")
         {
             BasePlayer hibp = hitinfo.Initiator as BasePlayer;
-            if (configData.Options.debug) Utils.DoLog("Checking for god perms");
+            if (configData.Options.debug) DoLog("Checking for god perms");
             if (hibp != null && Permissions.UserHasPermission(permNextGenPVEGod, hibp.UserIDString))
             {
                 Utils.DoLog("Admin almighty!");
                 return null;
             }
-            if (configData.Options.debug) Utils.DoLog("Checking for suicide flag or friendly fire");
+            if (configData.Options.debug) DoLog("Checking for suicide flag or friendly fire");
             if (ttype == "BasePlayer")
             {
                 ulong sid = hibp.userID;
@@ -786,7 +776,7 @@ public class NextGenPVE : RustScript
         if (canhurt)
         {
             DoLog($"DAMAGE ALLOWED for {stype} attacking {ttype}, majority damage type {majority}");
-            if (configData.Options.debug) Utils.DoLog(":EXIT");
+            if (configData.Options.debug) DoLog(":EXIT");
             return null;
         }
 
@@ -801,13 +791,13 @@ public class NextGenPVE : RustScript
     {
         if (source == null || target == null)
         {
-            if (configData.Options.debug) Utils.DoLog("Null source or target object");
+            if (configData.Options.debug) DoLog("Null source or target object");
             stype = "";
             ttype = "";
             return false;
         }
 
-        if (configData.Options.debug) Utils.DoLog("Getting source type");
+        if (configData.Options.debug) DoLog("Getting source type");
         if (source.ShortPrefabName == "rocket_mlrs")
         {
             stype = "MLRS";
@@ -821,16 +811,16 @@ public class NextGenPVE : RustScript
             stype = source?.GetType().Name;
         }
 
-        if (configData.Options.debug) Utils.DoLog("Getting target type");
+        if (configData.Options.debug) DoLog("Getting target type");
         ttype = target?.GetType().Name;
         if (string.IsNullOrEmpty(stype) || string.IsNullOrEmpty(ttype))
         {
-            if (configData.Options.debug) Utils.DoLog("Type detection failure.  Bailing out.");
+            if (configData.Options.debug) DoLog("Type detection failure.  Bailing out.");
             stype = "";
             ttype = "";
             return false;
         }
-        if (configData.Options.debug) Utils.DoLog($"attacker type: {stype}, victim type: {ttype}");
+        if (configData.Options.debug) DoLog($"attacker type: {stype}, victim type: {ttype}");
 
         // Special case for preventing codelock hacking
         if (stype == "CodeLock" && ttype == "BasePlayer")
@@ -1366,6 +1356,7 @@ public class NextGenPVE : RustScript
         }
 
         //scheduleTimer = timer.Once(configData.Options.useRealTime ? 30f : 5f, () => RunSchedule(refresh));
+        timer.Once(configData.Options.useRealTime ? 30f : 5f, () => RunSchedule(refresh), out scheduleTimer);
     }
 
     public string EditScheduleHM(string rs, string newval, string tomod)
@@ -1549,7 +1540,7 @@ public class NextGenPVE : RustScript
     {
         if (!enabled) return;
         if (message.Contains("Turret")) return; // Log volume FIXME
-        //if (dolog) LogToFile(logfilename, "".PadLeft(indent, ' ') + message, this);
+        if (dolog) LogToFile(logfilename, "".PadLeft(indent, ' ') + message, this);
     }
     #endregion
 

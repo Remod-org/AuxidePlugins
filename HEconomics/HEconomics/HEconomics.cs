@@ -46,16 +46,6 @@ public class HEconomics : RustScript
         public bool debug;
     }
 
-    public string Lang(string input, params object[] args)
-    {
-        return string.Format(lang.Get(input), args);
-    }
-
-    public void Message(BasePlayer player, string input, params object[] args)
-    {
-        Utils.SendReply(player, string.Format(lang.Get(input), args));
-    }
-
     public void LoadDefaultConfig() => configData = new Configuration();
 
     public void LoadConfig()
