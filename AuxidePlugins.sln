@@ -29,6 +29,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ABackpacks", "ABackpacks\AB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HMonBots", "HMonBots\HMonBots.csproj", "{84A8F9C3-DD26-471E-B44A-F11CDE74FB18}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D1126ACE-745B-4EFE-A526-9527009CC7B1}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlyingCarpet", "FlyingCarpet\FlyingCarpet\FlyingCarpet.csproj", "{6C333A4D-E3F8-4630-BBBC-C936C67C9272}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +94,10 @@ Global
 		{84A8F9C3-DD26-471E-B44A-F11CDE74FB18}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84A8F9C3-DD26-471E-B44A-F11CDE74FB18}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84A8F9C3-DD26-471E-B44A-F11CDE74FB18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C333A4D-E3F8-4630-BBBC-C936C67C9272}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C333A4D-E3F8-4630-BBBC-C936C67C9272}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C333A4D-E3F8-4630-BBBC-C936C67C9272}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C333A4D-E3F8-4630-BBBC-C936C67C9272}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -44,6 +44,7 @@ public class ABackpacks : RustScript
 
     public override void Initialize()
     {
+        LoadConfig();
         _instance = this;
 
         Permissions.RegisterPermission(Name, UsagePermission);
@@ -86,7 +87,7 @@ public class ABackpacks : RustScript
         //Subscribe(nameof(OnPlayerSleepEnded));
     }
 
-    private void Unload()
+    public void Unload()
     {
         UnityEngine.Object.Destroy(_immortalProtection);
 
@@ -323,8 +324,10 @@ public class ABackpacks : RustScript
 
         player.EndLooting();
 
+        Debug.LogWarning("Attemping to open delayed");
         // Must delay opening in case the chat is still closing or the loot panel may close instantly.
-        timer.Once(0.5f, () => _backpackManager.OpenBackpack(player.userID, player), out Timer notimer);
+        timer.Once(0.5f, () => _backpackManager.OpenBackpack(player.userID, player));
+        Debug.LogWarning("Opened delayed");
     }
 
     //[ConsoleCommand("backpack.open")]
@@ -527,7 +530,7 @@ public class ABackpacks : RustScript
 
         ulong backpackOwnerId = ulong.Parse(targetPlayer.UserIDString);
 
-        timer.Once(0.5f, () => _backpackManager.OpenBackpack(backpackOwnerId, player), out Timer notimer);
+        timer.Once(0.5f, () => _backpackManager.OpenBackpack(backpackOwnerId, player));
     }
 
     //[ChatCommand("backpackgui")]
@@ -890,8 +893,11 @@ public class ABackpacks : RustScript
         [JsonProperty("PlayersWithDisabledGUI")]
         public HashSet<ulong> PlayersWithDisabledGUI = new HashSet<ulong>();
 
-        public void Save() =>
+        public void Save()
+        {
+            Utils.DoLog("Saving stored data", true);
             _instance.data.WriteObject(_instance.Name, this);
+        }
     }
 
     #endregion

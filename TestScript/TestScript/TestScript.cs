@@ -16,6 +16,11 @@ public class TestScript : RustScript
         Utils.DoLog($"{script.Name} Loaded");
     }
 
+    public void OnScriptUnLoaded(IScriptReference script)
+    {
+        Utils.DoLog($"{script.Name} Unloaded");
+    }
+
     public void OnServerInitialized()
     {
         Utils.DoLog($"{Name} OSE");
@@ -124,6 +129,18 @@ public class TestScript : RustScript
         if (entity == null) return;
         if (player == null) return;
         Utils.DoLog($"{player.userID} looted {entity.ShortPrefabName}");
+    }
+
+    public void OnEntitySaved(BaseNetworkable entity, BaseNetworkable.SaveInfo saveInfo)
+    {
+        if (!enableme) return;
+        Utils.DoLog($"OnEntitySaved called for {entity?.ShortPrefabName}");
+    }
+
+    public void OnEntityDeath(BaseCombatEntity entity, HitInfo hitinfo)
+    {
+        if (!enableme) return;
+        Utils.DoLog($"{entity?.ShortPrefabName} was killed by {hitinfo?.HitEntity.ShortPrefabName}.");
     }
 
     public void OnPlayerJoin(BasePlayer player)

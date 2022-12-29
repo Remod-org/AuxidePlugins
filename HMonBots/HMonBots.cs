@@ -6,11 +6,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
-//using System.Timers;
 using UnityEngine;
 
-public class HMonBots : RustScript
+internal class HMonBots : RustScript
 {
+    public HMonBots()
+    {
+        Author = "RFC1920";
+        Description = "MonBots for Auxide";
+        Version = new VersionNumber(1, 0, 19);
+    }
     #region vars
     private ConfigData configData;
     private const string sci = "assets/rust.ai/agents/npcplayer/humannpc/scientist/scientistnpc_roam.prefab";
@@ -29,7 +34,7 @@ public class HMonBots : RustScript
 
     public static HMonBots Instance;
     public SortedDictionary<string, SpawnProfile> spawnpoints = new SortedDictionary<string, SpawnProfile>();
-    //        private Dictionary<string, MonBotsZoneMap> zonemaps = new Dictionary<string, MonBotsZoneMap>();
+    //private Dictionary<string, MonBotsZoneMap> zonemaps = new Dictionary<string, MonBotsZoneMap>();
     private Dictionary<ulong, MonBotPlayer> hpcacheid = new Dictionary<ulong, MonBotPlayer>();
 
     private static SortedDictionary<string, Vector3> monPos = new SortedDictionary<string, Vector3>();
@@ -98,15 +103,19 @@ public class HMonBots : RustScript
         }, Name);
     }
 
-    private void OnServerInitialized()
+    //private void OnServerInitialized()
+    public override void Initialize()
     {
+        Utils.DoLog("HMonBots Initializing...");
         LoadConfigVariables();
         Instance = this;
 
         //AddCovalenceCommand("mb", "cmdMB");
 
         FindMonuments();
+        Utils.DoLog("Loading data");
         LoadData();
+        Utils.DoLog("Loading bots");
         LoadBots();
 
         foreach (KeyValuePair<string, Vector3> mon in monPos)
@@ -133,9 +142,9 @@ public class HMonBots : RustScript
         }
     }
 
-    private void OnNewSave() => newsave = true;
+    public void OnNewSave() => newsave = true;
 
-    private void Unload()
+    public void Unload()
     {
         foreach (BasePlayer player in BasePlayer.activePlayerList.Where(x => x.IsAdmin))
         {
@@ -678,13 +687,20 @@ public class HMonBots : RustScript
                     //Narrowcast(HKits?.Call("GiveKit", bot, kit);
                 }
 
-                DoLog("Silencing effects");
-                ScientistNPC npc = bot as ScientistNPC;
-                npc.DeathEffects = new GameObjectRef[0];
-                npc.RadioChatterEffects = new GameObjectRef[0];
-                npc.radioChatterType = ScientistNPC.RadioChatterType.NONE;
-
-                timer.Once(5f, () => mono.activeItem = bot.GetActiveItem(), out Timer notimerobj);
+                try
+                {
+                    DoLog("Silencing effects");
+                    ScientistNPC npc = bot as ScientistNPC;
+                    npc.DeathEffects = new GameObjectRef[0];
+                    npc.RadioChatterEffects = new GameObjectRef[0];
+                    npc.radioChatterType = ScientistNPC.RadioChatterType.NONE;
+                }
+                catch (Exception es)
+                {
+                    DoLog($"Unable to silence effects: {es}");
+                }
+                //DoLog("Starting timer for GetActiveItem()");
+                timer.Once(5f, () => mono.activeItem = bot.GetActiveItem());
             }
             catch (Exception ex)
             {
@@ -894,9 +910,10 @@ public class HMonBots : RustScript
         }
     }
 
-    public void OnEntityDeath(HumanNPC humannpc, HitInfo hitinfo)
+    public void OnEntityDeath(BaseCombatEntity entity, HitInfo hitinfo)
     {
-        if (humannpc == null) return;
+        if (entity == null) return;
+        HumanNPC humannpc = entity as HumanNPC;
         MonBotPlayer npc = humannpc.GetComponent<MonBotPlayer>();
         if (npc == null) return;
         DoLog("OnEntityDeath: Found MonBot player");
@@ -936,7 +953,7 @@ public class HMonBots : RustScript
         if (npc?.info.respawn == true)
         {
             DoLog($"Setting {npc.info.respawnTimer} second respawn timer for {npc.info.displayName} ({npc.info.userid})");
-            timer.Once(npc.info.respawnTimer, () => SpawnBot(npc.info.userid), out Timer notimerobj);
+            timer.Once(npc.info.respawnTimer, () => SpawnBot(npc.info.userid));
         }
     }
 
@@ -982,7 +999,7 @@ public class HMonBots : RustScript
                         //corpse.containers[0].Clear();
                         corpse.containers[0].availableSlots.Clear();
                     }
-                    timer.Once(5f, () => InvCache.Remove(userid), out Timer notimerobj);
+                    timer.Once(5f, () => InvCache.Remove(userid));
                     ItemManager.DoRemoves();
                     return;
                 }
@@ -993,11 +1010,11 @@ public class HMonBots : RustScript
                     corpse.containers[i].availableSlots.Clear();
                 }
                 ItemManager.DoRemoves();
-            }, out Timer notimerobj2);
+            });
         }
     }
 
-    private object OnEntityTakeDamage(BaseCombatEntity entity, HitInfo hitinfo)
+    public object OnEntityTakeDamage(BaseCombatEntity entity, HitInfo hitinfo)
     {
         if (entity == null) return null;
         if (hitinfo == null) return null;
@@ -2014,7 +2031,7 @@ public class HMonBots : RustScript
                             Effect.server.Run("assets/bundled/prefabs/fx/headshot.prefab", attackPlayer.transform.position);
                             canHurt = false;
                             Invoke("ResetCanHurt", 0.5f);
-                        }, out Timer notimerobj);
+                        });
                     }
                 }
                 return;
@@ -2332,7 +2349,8 @@ public class HMonBots : RustScript
             }
             else
             {
-                name = Regex.Match(monument.name, @"\w{6}\/(.+\/)(.+)\.(.+)").Groups[2].Value.Replace("_", " ").Replace(" 1", "").Titleize() + " 0";
+                //name = Regex.Match(monument.name, @"\w{6}\/(.+\/)(.+)\.(.+)").Groups[2].Value.Replace("_", " ").Replace(" 1", "").Titleize() + " 0";
+                name = Regex.Match(monument.name, @"\w{6}\/(.+\/)(.+)\.(.+)").Groups[2].Value.Replace("_", " ").Replace(" 1", "").ToUpper() + " 0";
             }
             if (monPos.ContainsKey(name))
             {
@@ -2382,7 +2400,7 @@ public class HMonBots : RustScript
     public void LoadDefaultConfig()
     {
         Utils.DoLog("Creating new config file.");
-        ConfigData config = new ConfigData
+        ConfigData configuration = new ConfigData
         {
             Options = new Options()
             {
@@ -2392,7 +2410,7 @@ public class HMonBots : RustScript
             },
             Version = Version
         };
-        SaveConfig(config);
+        SaveConfig(configuration);
     }
 
     private void LoadConfigVariables()

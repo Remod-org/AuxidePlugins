@@ -421,7 +421,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HNoDecay.cs" />
+    <None Include="..\..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
+    <None Include="HNoDecay.cs" />
+    <Compile Include="NoDecay.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

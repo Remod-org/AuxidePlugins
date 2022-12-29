@@ -35,7 +35,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using Auxide.Scripting;
-using I18N.Common;
 
 internal class HTeleportication : RustScript
 {
@@ -75,13 +74,14 @@ internal class HTeleportication : RustScript
 
     private readonly string logfilename = "log";
 
-    private readonly RustScript HEconomics, HLootProtect;
+    //private readonly RustScript HEconomics;//, HLootProtect;
+    private readonly IScriptReference HEconomics;
 
     private readonly int blockLayer = LayerMask.GetMask("Construction");
 
     public class TPTimer
     {
-        public System.Timers.Timer timer;
+        public Timer timer;
         public float start;
         public float cooldown;
         public string type;
@@ -93,7 +93,7 @@ internal class HTeleportication : RustScript
 
     public class TPRTimer
     {
-        public System.Timers.Timer timer;
+        public Timer timer;
         public float start;
         public float countdown;
         public string type;
@@ -101,7 +101,7 @@ internal class HTeleportication : RustScript
     #endregion
 
     #region init
-    private void OnServerInitialized()
+    public void OnServerInitialized()
     {
         sqlConnection = new SqliteConnection(connStr);
         sqlConnection.Open();
@@ -211,7 +211,7 @@ internal class HTeleportication : RustScript
         Permissions.RegisterPermission(Name, permTP_Admin);
     }
 
-    private void Unload()
+    public void Unload()
     {
         foreach (BasePlayer player in BasePlayer.activePlayerList)
         {
@@ -360,7 +360,7 @@ internal class HTeleportication : RustScript
                         HandleTimer(userid, "TP", true);
                         if (CooldownTimers["TP"].ContainsKey(userid))
                         {
-                            CooldownTimers["TP"][userid].timer.Dispose();
+                            CooldownTimers["TP"][userid].timer.Destroy();
                             CooldownTimers["TP"].Remove(userid);
                         }
                         AddCooldown(player, pos, "TP", "TP");
@@ -612,7 +612,7 @@ internal class HTeleportication : RustScript
                         HandleTimer(player.userID, "Home", true);
                         if (CooldownTimers["Home"].ContainsKey(player.userID))
                         {
-                            CooldownTimers["Home"][player.userID].timer.Dispose();
+                            CooldownTimers["Home"][player.userID].timer.Destroy();
                             CooldownTimers["Home"].Remove(player.userID);
                         }
                         AddCooldown(player, StringToVector3(homes[0]), "Home", "Home");
@@ -664,7 +664,7 @@ internal class HTeleportication : RustScript
                     HandleTimer(player.userID, "Home", true);
                     if (CooldownTimers["Home"].ContainsKey(player.userID))
                     {
-                        CooldownTimers["Home"][player.userID].timer.Dispose();
+                        CooldownTimers["Home"][player.userID].timer.Destroy();
                         CooldownTimers["Home"].Remove(player.userID);
                     }
                     AddCooldown(player, StringToVector3(homes[0]), "Home", "Home");
@@ -824,7 +824,7 @@ internal class HTeleportication : RustScript
                             HandleTimer(player.userID, dtype, true);
                             if (CooldownTimers[dtype].ContainsKey(player.userID))
                             {
-                                CooldownTimers[dtype][player.userID].timer.Dispose();
+                                CooldownTimers[dtype][player.userID].timer.Destroy();
                                 CooldownTimers[dtype].Remove(player.userID);
                             }
                             AddCooldown(player, StringToVector3(tunnel[0]), dtype, Lang("town"));
@@ -870,7 +870,7 @@ internal class HTeleportication : RustScript
                             HandleTimer(player.userID, type, true);
                             if (CooldownTimers[type].ContainsKey(player.userID))
                             {
-                                CooldownTimers[type][player.userID].timer.Dispose();
+                                CooldownTimers[type][player.userID].timer.Destroy();
                                 CooldownTimers[type].Remove(player.userID);
                             }
                             AddCooldown(player, StringToVector3(target[0]), type, Lang("town"));
@@ -915,7 +915,7 @@ internal class HTeleportication : RustScript
                 HandleTimer(player.userID, "TPB", true);
                 if (CooldownTimers["TPB"].ContainsKey(player.userID))
                 {
-                    CooldownTimers["TPB"][player.userID].timer.Dispose();
+                    CooldownTimers["TPB"][player.userID].timer.Destroy();
                     CooldownTimers["TPB"].Remove(player.userID);
                 }
                 AddCooldown(player, oldloc, "TPB", Lang("tpb"));
@@ -1126,12 +1126,12 @@ internal class HTeleportication : RustScript
                 if (reject)
                 {
                     Message(src, "tprreject", req.Value.ToString());
-                    TPRTimers[req.Key].timer.Dispose();
+                    TPRTimers[req.Key].timer.Destroy();
                     TPRTimers.Remove(req.Key);
                     return;
                 }
                 Message(tgt, "tprnotify", src.displayName);
-                TPRTimers[req.Key].timer.Dispose();
+                TPRTimers[req.Key].timer.Destroy();
             }
         }
     }
@@ -2039,19 +2039,19 @@ internal class HTeleportication : RustScript
                 DoLog($"Creating a {type} countdown timer for {userid}.  Timer will be set to {countdown} seconds{isvip}.");
                 TeleportTimers[userid].start = Time.realtimeSinceStartup;
                 TeleportTimers[userid].cooldown = countdown;
-//                TeleportTimers[userid].timer = timer.Once(TeleportTimers[userid].cooldown, () => Teleport(TeleportTimers[userid].source, TeleportTimers[userid].targetLocation, type));
+                TeleportTimers[userid].timer = timer.Once(TeleportTimers[userid].cooldown, () => Teleport(TeleportTimers[userid].source, TeleportTimers[userid].targetLocation, type));
             }
             else
             {
                 RunUpdateQuery($"UPDATE rtp_player SET lastused='{Time.realtimeSinceStartup}' WHERE userid='{userid}' AND name='{TeleportTimers[userid].targetName}'");
                 if (TeleportTimers.ContainsKey(userid))
                 {
-                    TeleportTimers[userid].timer.Dispose();
+                    TeleportTimers[userid].timer.Destroy();
                     TeleportTimers.Remove(userid);
                 }
                 if (TPRTimers.ContainsKey(userid))
                 {
-                    TPRTimers[userid].timer.Dispose();
+                    TPRTimers[userid].timer.Destroy();
                     TPRTimers.Remove(userid);
                 }
             }
@@ -2060,11 +2060,11 @@ internal class HTeleportication : RustScript
         {
             if (start)
             {
-//                TPRTimers[userid].timer = timer.Once(TPRTimers[userid].countdown, () => TPRNotification(true));
+                TPRTimers[userid].timer = timer.Once(TPRTimers[userid].countdown, () => TPRNotification(true));
             }
             else
             {
-                TPRTimers[userid].timer.Dispose();
+                TPRTimers[userid].timer.Destroy();
                 TPRTimers.Remove(userid);
             }
         }
@@ -2101,7 +2101,7 @@ internal class HTeleportication : RustScript
                 if (configData.Types[type].AllowBypass && configData.Types[type].BypassAmount > 0 && (configData.Options.useEconomics || configData.Options.useServerRewards) && HandleMoney(userid, configData.Types[type].BypassAmount, true))
                 {
                     bypass = configData.Types[type].BypassAmount;
-                    CooldownTimers[type][userid].timer.Dispose();
+                    CooldownTimers[type][userid].timer.Destroy();
                     CooldownTimers[type].Remove(userid);
                     return true;
                 }
@@ -2137,12 +2137,12 @@ internal class HTeleportication : RustScript
             DoLog($"Creating a {type} cooldown timer for {userid}.  Timer will be set to {cooldown} seconds{isvip} including countdown.");
             CooldownTimers[type][userid].start = Time.realtimeSinceStartup;
             CooldownTimers[type][userid].cooldown = cooldown;
-//            CooldownTimers[type][userid].timer = timer.Once(cooldown, () => HandleCooldown(userid, type, false, canbypass, bypassamount, dobypass, true));
+            CooldownTimers[type][userid].timer = timer.Once(cooldown, () => HandleCooldown(userid, type, false, canbypass, bypassamount, dobypass, true));
         }
         else if (kill)
         {
             DoLog($"Destroying {type} cooldown timer for {userid}");
-            CooldownTimers[type][userid].timer.Dispose();
+            CooldownTimers[type][userid].timer.Destroy();
             CooldownTimers[type].Remove(userid);
         }
     }
@@ -2227,7 +2227,7 @@ internal class HTeleportication : RustScript
         {
             dateInt = Convert.ToInt32(dt.Hour.ToString().PadLeft(2, '0') + dt.Minute.ToString().PadLeft(2, '0') + dt.Second.ToString().PadLeft(2, '0'));
             DoLog($"Startup: Set start time to {dateInt.ToString().PadLeft(6, '0')} for daily limits");
-//            timer.Once(60f, () => MidnightDetect());
+            timer.Once(60f, () => MidnightDetect());
             return;
         }
 
@@ -2236,7 +2236,7 @@ internal class HTeleportication : RustScript
         if (now > dateInt)
         {
             //DoLog($"MidnightDetect: Still same day.  NOW {now.ToString().PadLeft(6, '0')} > Startup {dateInt.ToString().PadLeft(6, '0')}.");
-//            timer.Once(60f, () => MidnightDetect());
+            timer.Once(60f, () => MidnightDetect());
             return;
         }
         DoLog($"MidnightDetect: Day changed!  NOW {now.ToString().PadLeft(6, '0')} < Startup {dateInt.ToString().PadLeft(6, '0')}.  Clearing the daily limits.");
@@ -2253,7 +2253,7 @@ internal class HTeleportication : RustScript
                 { "Outpost", new Dictionary<ulong, float>() },
                 { "Tunnel", new Dictionary<ulong, float>() }
             };
-//        timer.Once(60f, () => MidnightDetect());
+        timer.Once(60f, () => MidnightDetect());
     }
 
     //        public void TeleportToPlayer(BasePlayer player, BasePlayer target) => Teleport(player, target.transform.position);

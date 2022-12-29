@@ -65,6 +65,7 @@ public class NextGenPVE : RustScript
     {
         //Instance = this;
         //Utils.DoLog("Creating database connection for main thread.");
+        LoadConfigVariables();
 
         Auxide.Scripting.DynamicConfigFile dataFile = data.GetDatafile("nextgenpve");
         dataFile.Save();
@@ -130,7 +131,7 @@ public class NextGenPVE : RustScript
         ngpvezonemaps = new Dictionary<string, NextGenPVEZoneMap>();
         NewPurgeSchedule();
         SaveData();
-        //UpdateEnts();
+        UpdateEnts();
     }
 
     private void UpdateEnts()
@@ -141,19 +142,23 @@ public class NextGenPVE : RustScript
         List<string> names = new List<string>();
         foreach (UnityEngine.Object obj in Resources.FindObjectsOfTypeAll(new BaseCombatEntity().GetType()))
         {
-            string objname = obj.GetType().ToString();
+            string objname = obj?.GetType().ToString();
+            if (string.IsNullOrEmpty(objname)) continue;
             if (objname.Contains("Entity")) continue;
             if (names.Contains(objname)) continue; // Saves 20-30 seconds of processing time.
+            string category = objname.ToLower().Contains("npc") ? "npc" : "unknown";
             names.Add(objname);
-            //Utils.DoLog($"{objname}");
 
             using (SqliteConnection c = new SqliteConnection(connStr))
             {
                 c.Open();
-                string query = $"INSERT INTO ngpve_entities (name, type) SELECT 'unknown', '{objname}' WHERE NOT EXISTS (SELECT * FROM ngpve_entities WHERE type='{objname}')";
+                string query = $"INSERT INTO ngpve_entities (name, type) SELECT '{category}', '{objname}' WHERE NOT EXISTS (SELECT * FROM ngpve_entities WHERE type='{objname}')";
                 using (SqliteCommand us = new SqliteCommand(query, c))
                 {
-                    us.ExecuteNonQuery();
+                    if (us.ExecuteNonQuery() > 0)
+                    {
+                        Utils.DoLog($"Added {objname} as {category}.");
+                    }
                 }
             }
         }
@@ -283,23 +288,24 @@ public class NextGenPVE : RustScript
 
     public void Unload()
     {
-        //foreach (BasePlayer player in BasePlayer.activePlayerList)
-        //{
-        //    CuiHelper.DestroyUi(player, NGPVERULELIST);
-        //    CuiHelper.DestroyUi(player, NGPVERULEEDIT);
-        //    CuiHelper.DestroyUi(player, NGPVEVALUEEDIT);
-        //    CuiHelper.DestroyUi(player, NGPVESCHEDULEEDIT);
-        //    CuiHelper.DestroyUi(player, NGPVEEDITRULESET);
-        //    CuiHelper.DestroyUi(player, NGPVERULESELECT);
-        //    CuiHelper.DestroyUi(player, NGPVEENTSELECT);
-        //    CuiHelper.DestroyUi(player, NGPVENPCSELECT);
-        //    CuiHelper.DestroyUi(player, NGPVEENTEDIT);
-        //    CuiHelper.DestroyUi(player, NGPVERULEEXCLUSIONS);
-        //    CuiHelper.DestroyUi(player, NGPVECUSTOMSELECT);
-        //}
+        foreach (BasePlayer player in BasePlayer.activePlayerList)
+        {
+            if (!Permissions.UserHasPermission(permNextGenPVEAdmin, player?.UserIDString)) continue;
+            CuiHelper.DestroyUi(player, NGPVERULELIST);
+            CuiHelper.DestroyUi(player, NGPVERULEEDIT);
+            CuiHelper.DestroyUi(player, NGPVEVALUEEDIT);
+            CuiHelper.DestroyUi(player, NGPVESCHEDULEEDIT);
+            CuiHelper.DestroyUi(player, NGPVEEDITRULESET);
+            CuiHelper.DestroyUi(player, NGPVERULESELECT);
+            CuiHelper.DestroyUi(player, NGPVEENTSELECT);
+            CuiHelper.DestroyUi(player, NGPVENPCSELECT);
+            CuiHelper.DestroyUi(player, NGPVEENTEDIT);
+            CuiHelper.DestroyUi(player, NGPVERULEEXCLUSIONS);
+            CuiHelper.DestroyUi(player, NGPVECUSTOMSELECT);
+        }
 
         scheduleTimer?.Stop();
-        sqlConnection.Close();
+        sqlConnection?.Close();
     }
 
     private void LoadData()
@@ -692,18 +698,18 @@ public class NextGenPVE : RustScript
         if (!enabled) return null;
         if (entity == null) return null;
         if (hitinfo == null) return null;
-        string majority = hitinfo.damageTypes.GetMajorityDamageType().ToString();
-        if (majority == "Decay") return null;
+        string majority = hitinfo.damageTypes?.GetMajorityDamageType().ToString();
+        if (hitinfo?.damageTypes.GetMajorityDamageType() == Rust.DamageType.Decay) return null;
 
         if (configData.Options.debug) DoLog("ENTRY:");
         if (configData.Options.debug) DoLog("Checking for fall damage");
-        if (majority == "Fall" && hitinfo.Initiator == null)
+        if (majority == "Fall" && hitinfo?.Initiator == null)
         {
-            DoLog($"Null initiator for attack on {entity.ShortPrefabName} by Fall");
+            DoLog($"Null initiator for attack on {entity?.ShortPrefabName} by Fall");
             if (BlockFallDamage(entity))
             {
-                if (configData.Options.debug) DoLog(":EXIT");
-                return true;
+                if (configData.Options.debug) DoLog(":EXIT FALL");
+                return false;
             }
         }
 
@@ -776,13 +782,13 @@ public class NextGenPVE : RustScript
         if (canhurt)
         {
             DoLog($"DAMAGE ALLOWED for {stype} attacking {ttype}, majority damage type {majority}");
-            if (configData.Options.debug) DoLog(":EXIT");
+            if (configData.Options.debug) DoLog(":EXIT ALLOWED");
             return null;
         }
 
         DoLog($"DAMAGE BLOCKED for {stype} attacking {ttype}, majority damage type {majority}");
-        if (configData.Options.debug) Utils.DoLog(":EXIT");
-        return true;
+        if (configData.Options.debug) DoLog(":EXIT BLOCKED");
+        return false;
     }
     #endregion
 
@@ -1355,8 +1361,7 @@ public class NextGenPVE : RustScript
             }
         }
 
-        //scheduleTimer = timer.Once(configData.Options.useRealTime ? 30f : 5f, () => RunSchedule(refresh));
-        timer.Once(configData.Options.useRealTime ? 30f : 5f, () => RunSchedule(refresh), out scheduleTimer);
+        scheduleTimer = timer.Once(configData.Options.useRealTime ? 30f : 5f, () => RunSchedule(refresh));
     }
 
     public string EditScheduleHM(string rs, string newval, string tomod)
