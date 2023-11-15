@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
+[Info("HLootProtect", "RFC1920", "1.0.2")]
+[Description("Basic loot protection for Auxide");
 public class HLootProtect : RustScript
 {
     private static ConfigData configData;
@@ -12,13 +14,6 @@ public class HLootProtect : RustScript
     private Dictionary<ulong, ulong> lootingBackpack = new Dictionary<ulong, ulong>();
     private bool newsave;
 
-    public HLootProtect()
-    {
-        Author = "RFC1920";
-        Description = "Basic loot protection for Auxide";
-        Version = new VersionNumber(1, 0, 1);
-    }
-
     public class ConfigData
     {
         public bool debug;
@@ -26,6 +21,7 @@ public class HLootProtect : RustScript
         public bool protectCorpse;
         public bool TCAuthedUserAccess;
         public float protectedDays;
+        public bool useHammerForShareStatus;
         public Dictionary<string, bool> Rules = new Dictionary<string, bool>();
     }
 
@@ -140,6 +136,25 @@ public class HLootProtect : RustScript
     public void OnNewSave()
     {
         newsave = true;
+    }
+
+    public object OnHammerHit(BasePlayer player, HitInfo hit)
+    {
+        if (!configData.useHammerForShareStatus) return null;
+        BaseEntity ent = hit.HitEntity;
+        if (ent != null && sharing.ContainsKey(ent.OwnerID))
+        {
+            string ename = ent.ShortPrefabName;
+            if (ename.Equals("cupboard.tool.deployed"))
+            {
+                player.SendConsoleCommand("bshare ?");
+            }
+            else
+            {
+                player.SendConsoleCommand("share ?");
+            }
+        }
+        return null;
     }
 
     public object CanMount(BaseMountable entity, BasePlayer player)
@@ -310,7 +325,7 @@ public class HLootProtect : RustScript
                                 }
                                 else
                                 {
-                                   if (configData.debug)  Utils.DoLog($"Removing {ent.net.ID} from sharing list...");
+                                    if (configData.debug) Utils.DoLog($"Removing {ent.net.ID} from sharing list...");
                                 }
                             }
                             sharing[player.userID] = repl;

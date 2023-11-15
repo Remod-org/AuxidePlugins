@@ -5,6 +5,8 @@ using System.Globalization;
 using System.Linq;
 using UnityEngine;
 
+[Info("HKits", "RFC1920", "1.0.2")]
+[Description("Basic user kits for Auxide")]
 public class HKits : RustScript
 {
     private static ConfigData configData;
@@ -12,13 +14,6 @@ public class HKits : RustScript
     private bool newsave;
     private List<ulong> isopen = new List<ulong>();
     private const string KITGUI = "hkits.gui";
-
-    public HKits()
-    {
-        Author = "RFC1920";
-        Description = "Basic user kits for Auxide";
-        Version = new VersionNumber(1, 0, 2);
-    }
 
     public class ConfigData
     {
@@ -28,6 +23,7 @@ public class HKits : RustScript
 
     public override void Initialize()
     {
+        DoLog("Kits initialize");
         foreach (BasePlayer player in BasePlayer.activePlayerList)
         {
             CuiHelper.DestroyUi(player, KITGUI);
@@ -37,6 +33,7 @@ public class HKits : RustScript
 
     public void OnScriptLoaded()
     {
+        DoLog("Kits onscriptloaded");
         Permissions.RegisterPermission(Name, "kits.use");
         LoadConfig();
         LoadData();
@@ -122,9 +119,11 @@ public class HKits : RustScript
             Message(player, "notauthorized");
             return;
         }
-
-        string showArgs = string.Join(",", args);
-        if (configData.debug) Utils.DoLog($"{command}: {showArgs}");
+        //if (configData.debug && args.Length > 0)
+        //{
+        //    string showArgs = string.Join(",", args);
+        //    Utils.DoLog($"{command}: {showArgs}");
+        //}
         switch (command)
         {
             //case "kits":

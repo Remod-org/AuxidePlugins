@@ -1,17 +1,10 @@
-﻿using Auxide;
-
+﻿[Info("HDayNight", "RFC1920", "1.0.1")]
+[Description("Provides day, night, and timeset/settime commands, with a limit timer.")]
 public class HDayNight : RustScript
 {
     private static ConfigData configData;
     private bool limitCleared = true;
     public System.Timers.Timer limitTimer;
-
-    public HDayNight()
-    {
-        Author = "RFC1920";
-        Version = new VersionNumber(1, 0, 1);
-        Description = "Provides day, night, and timeset/settime commands, with a limit timer.";
-    }
 
     public class ConfigData
     {

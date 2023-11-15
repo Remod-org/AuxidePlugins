@@ -88,7 +88,7 @@ public class HNoDecay : RustScript
     //        || (res.Equals("metal.fragments") && configData.blockFragsFromTC)
     //        || (res.Equals("metal.refined") && configData.blockMetalFromTC))
     //    {
-    //        if (configData.debug) Utils.DoLog($"Player blocked from adding {res} to a cupboard!");
+    //        if (configData.debug) DoLog($"Player blocked from adding {res} to a cupboard!");
     //        return ItemContainer.CanAcceptResult.CannotAcceptRightNow;
     //    }
 
@@ -100,18 +100,18 @@ public class HNoDecay : RustScript
         if (hitInfo == null) return null;
         if (entity != null && hitInfo.damageTypes.Has(DamageType.Decay) && (configData.blockBuildingDecay || configData.blockDeployableDecay))
         {
-            if (configData.debug) Utils.DoLog($"Decay called for {entity.GetType().Name}({entity.ShortPrefabName})");
+            if (configData.debug) DoLog($"Decay called for {entity.GetType().Name}({entity.ShortPrefabName})");
             {
                 if ((entity is BuildingBlock) && entity?.OwnerID != 0 && configData.blockBuildingDecay)
                 {
-                    if (configData.debug) Utils.DoLog($"Blocking building block decay on {entity?.ShortPrefabName}");
+                    if (configData.debug) DoLog($"Blocking building block decay on {entity?.ShortPrefabName}");
                     // Scale amount
                     hitInfo.damageTypes.Scale(DamageType.Decay, 0);
                     //return true;
                 }
                 else if (entity?.OwnerID != 0 && configData.blockDeployableDecay)
                 {
-                    if (configData.debug) Utils.DoLog($"Blocking deployable decay on {entity?.ShortPrefabName}");
+                    if (configData.debug) DoLog($"Blocking deployable decay on {entity?.ShortPrefabName}");
                     // Scale amount
                     hitInfo.damageTypes.Scale(DamageType.Decay, 0);
                     //return true;

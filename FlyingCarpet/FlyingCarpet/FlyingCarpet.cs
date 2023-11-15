@@ -558,7 +558,7 @@ internal class FlyingCarpet : RustScript
 
     #region Hooks
     // This is how we take off or land the carpet!
-    private object OnOvenToggle(BaseOven oven, BasePlayer player)
+    public object OnOvenToggle(BaseOven oven, BasePlayer player)
     {
         const bool rtrn = false; // Must match other plugins with this call to avoid conflicts. QuickSmelt uses false
 
@@ -620,7 +620,7 @@ internal class FlyingCarpet : RustScript
     }
 
     // Check for carpet lantern fuel
-    private void OnFuelConsume(BaseOven oven, Item fuel, ItemModBurnable burnable)
+    public void OnFuelConsume(BaseOven oven, Item fuel, ItemModBurnable burnable)
     {
         // Only work on lanterns
         if (oven.ShortPrefabName != "lantern.deployed") return;
@@ -677,7 +677,7 @@ internal class FlyingCarpet : RustScript
     }
 
     // To skip cycling our lantern (thanks, k11l0u)
-    private object OnNightLanternToggle(BaseEntity entity, bool status)
+    public object OnNightLanternToggle(BaseEntity entity, bool status)
     {
         // Only work on lanterns
         if (entity.ShortPrefabName != "lantern.deployed") return null;
@@ -886,21 +886,22 @@ internal class FlyingCarpet : RustScript
         }
     }
 
-    private void OnPlayerInput(BasePlayer player, InputState input)
+    public object OnPlayerInput(BasePlayer player, InputState input)
     {
-        if (player == null || input == null) return;
-        if (!player.isMounted) return;
+        if (player == null || input == null) return null;
+        //if (!player.isMounted) return null;
 
         CarpetEntity activecarpet = player.GetMounted().GetComponentInParent<CarpetEntity>();
-        if (activecarpet == null) return;
-        if (player.GetMounted() != activecarpet.entity) return;
+        if (activecarpet == null) return null;
+        if (player.GetMounted() != activecarpet.entity) return null;
         if (input != null)
         {
             activecarpet.CarpetInput(input, player);
         }
+        return null;
     }
 
-    private void OnEntityTakeDamage(BaseCombatEntity entity, HitInfo hitInfo)
+    public void OnTakeDamage(BaseCombatEntity entity, HitInfo hitInfo)
     {
         if (entity == null || hitInfo == null) return;
         CarpetEntity iscarpet = entity.GetComponentInParent<CarpetEntity>();
@@ -929,7 +930,7 @@ internal class FlyingCarpet : RustScript
         return false;
     }
 
-    private object CanMountEntity(BasePlayer player, BaseMountable mountable)
+    public object CanMountEntity(BasePlayer player, BaseMountable mountable)
     {
         CarpetEntity activecarpet = mountable.GetComponentInParent<CarpetEntity>();
         if (activecarpet != null)
@@ -939,7 +940,7 @@ internal class FlyingCarpet : RustScript
         return null;
     }
 
-    private object CanDismountEntity(BasePlayer player, BaseMountable entity)
+    public object CanDismountEntity(BasePlayer player, BaseMountable entity)
     {
         if (player == null) return null;
         if (PilotListContainsPlayer(player))
@@ -950,7 +951,7 @@ internal class FlyingCarpet : RustScript
         return null;
     }
 
-    private void OnEntityMounted(BaseMountable mountable, BasePlayer player)
+    public void OnEntityMounted(BaseMountable mountable, BasePlayer player)
     {
         CarpetEntity activecarpet = mountable.GetComponentInParent<CarpetEntity>();
         if (activecarpet != null)
@@ -963,7 +964,7 @@ internal class FlyingCarpet : RustScript
         }
     }
 
-    private void OnEntityDismounted(BaseMountable mountable, BasePlayer player)
+    public void OnEntityDismounted(BaseMountable mountable, BasePlayer player)
     {
         CarpetEntity activecarpet = mountable.GetComponentInParent<CarpetEntity>();
         if (activecarpet != null)
@@ -975,7 +976,7 @@ internal class FlyingCarpet : RustScript
         }
     }
 
-    private object CanLootEntity(BasePlayer player, StorageContainer container)
+    public object CanLootEntity(BasePlayer player, StorageContainer container)
     {
         if (container == null || player == null) return null;
         CarpetEntity iscarpet = container.GetComponentInParent<CarpetEntity>();
@@ -986,7 +987,7 @@ internal class FlyingCarpet : RustScript
         return null;
     }
 
-    private object CanPickupEntity(BasePlayer player, BaseCombatEntity entity)
+    public object CanPickupEntity(BasePlayer player, BaseCombatEntity entity)
     {
         if (entity == null || player == null) return null;
         string myparent = entity?.GetParentEntity()?.name;
@@ -1011,13 +1012,13 @@ internal class FlyingCarpet : RustScript
         return null;
     }
 
-    private object CanDeployItem(BasePlayer player, Deployer deployer, uint entityId)
+    public object CanDeployItem(BasePlayer player, Deployer deployer, uint entityId)
     {
         if (entityId == 0 || player == null) return null;
         string myparent = null;
         try
         {
-            BaseNetworkable myent = BaseNetworkable.serverEntities.Find(entityId);
+            BaseNetworkable myent = BaseNetworkable.serverEntities.Find(new NetworkableId(entityId));
             myparent = myent.GetParentEntity().name;
             Utils.DoLog(myparent);
         }
@@ -1033,7 +1034,7 @@ internal class FlyingCarpet : RustScript
         return null;
     }
 
-    private object CanPickupLock(BasePlayer player, BaseLock baseLock)
+    public object CanPickupLock(BasePlayer player, BaseLock baseLock)
     {
         if (baseLock == null || player == null) return null;
 
@@ -1072,7 +1073,7 @@ internal class FlyingCarpet : RustScript
         if (loadplayer.ContainsKey(ownerid)) loadplayer[ownerid].carpetcount--;
     }
 
-    private object OnPlayerDeath(BasePlayer player, HitInfo info)
+    public object OnPlayerDeath(BasePlayer player, HitInfo info)
     {
         RemovePlayerFromPilotsList(player);
         return null;
@@ -1083,12 +1084,12 @@ internal class FlyingCarpet : RustScript
         RemovePlayerFromPilotsList(player);
     }
 
-    private void OnPlayerDisconnected(BasePlayer player, string reason)
+    public void OnPlayerDisconnected(BasePlayer player, string reason)
     {
         RemoveCarpet(player);
     }
 
-    private void OnPlayerRespawned(BasePlayer player)
+    public void OnPlayerRespawned(BasePlayer player)
     {
         RemoveCarpet(player);
     }
@@ -1105,7 +1106,7 @@ internal class FlyingCarpet : RustScript
         }
     }
 
-    private void Unload()
+    public void Unload()
     {
         DestroyAll<CarpetEntity>();
         foreach (BasePlayer player in BasePlayer.activePlayerList)
@@ -1625,17 +1626,29 @@ internal class FlyingCarpet : RustScript
 
         public void SpawnCarpet()
         {
-            carpet1 = SpawnPart(prefabcarpet, carpet1, false, 0, 0, 0, 0f, 0.3f, 0f, entity, skinid);
+            carpet1 = SpawnPart(prefabcarpet, carpet1, false, 0, 0, 0, 0f, 0.05f, 0f, entity, skinid);
             sitbox = SpawnPart(prefabbox, carpet1, false, 0, 90, 0, 0f, -0.2f, 0f, entity, Instance.configData.BoxSkinID);
-            lantern1 = SpawnPart(prefablamp, lantern1, true, 0, 0, 0, 0f, 0.33f, 1f, entity, 1);
+            lantern1 = SpawnPart(prefablamp, lantern1, true, 0, 0, 0, 0f, -0.01f, 1f, entity, 1);
             lantern1.SetFlag(BaseEntity.Flags.On, false);
-            carpetlock = SpawnPart(prefablock, carpetlock, true, 0, 90, 90, 0.5f, 0.3f, 0.7f, entity, 1);
-            sign = SpawnPart(prefabsign, sign, true, -45, 0, 0, 0, 0.25f, 1.75f, entity, 1);
+            carpetlock = SpawnPart(prefablock, carpetlock, true, 0, 90, 90, 0.5f, 0.02f, 0.7f, entity, 1);
+            sign = SpawnPart(prefabsign, sign, true, -45, 0, 0, 0, -0.05f, 1.75f, entity, 1);
 
-            lights1 = SpawnPart(prefablights, lights1, true, 0, 90, 0, 0.8f, 0.31f, 0.1f, entity, 1);
+            lights1 = SpawnPart(prefablights, lights1, true, 0, 90, 0, 0.8f, -0.02f, 0.1f, entity, 1);
             lights1.SetFlag(BaseEntity.Flags.Busy, true);
-            lights2 = SpawnPart(prefablights, lights2, true, 0, 90, 0, -0.9f, 0.31f, 0.1f, entity, 1);
+            lights2 = SpawnPart(prefablights, lights2, true, 0, 90, 0, -0.9f, -0.02f, 0.1f, entity, 1);
             lights2.SetFlag(BaseEntity.Flags.Busy, true);
+
+            //carpet1 = SpawnPart(prefabcarpet, carpet1, false, 0, 0, 0, 0f, 0.3f, 0f, entity, skinid);
+            //sitbox = SpawnPart(prefabbox, carpet1, false, 0, 90, 0, 0f, -0.2f, 0f, entity, Instance.configData.BoxSkinID);
+            //lantern1 = SpawnPart(prefablamp, lantern1, true, 0, 0, 0, 0f, 0.33f, 1f, entity, 1);
+            //lantern1.SetFlag(BaseEntity.Flags.On, false);
+            //carpetlock = SpawnPart(prefablock, carpetlock, true, 0, 90, 90, 0.5f, 0.3f, 0.7f, entity, 1);
+            //sign = SpawnPart(prefabsign, sign, true, -45, 0, 0, 0, 0.25f, 1.75f, entity, 1);
+
+            //lights1 = SpawnPart(prefablights, lights1, true, 0, 90, 0, 0.8f, 0.31f, 0.1f, entity, 1);
+            //lights1.SetFlag(BaseEntity.Flags.Busy, true);
+            //lights2 = SpawnPart(prefablights, lights2, true, 0, 90, 0, -0.9f, 0.31f, 0.1f, entity, 1);
+            //lights2.SetFlag(BaseEntity.Flags.Busy, true);
 
             if (needfuel)
             {

@@ -283,19 +283,18 @@ public class HTeleport : RustScript
             {
                 if (configData.debug) Utils.DoLog($"Found compound at {monument.transform.position}");
                 configData.server.Locations["outpost"] = monument.transform.position;
-                foreach (Collider coll in Physics.OverlapSphere(monument.transform.position, 100, LayerMask.GetMask("Deployed")))
+                Vector3 extents = monument.Bounds.extents;
+                DoLog($"  Adding Outpost target pos: {monument.transform.position}, size: {extents}");
+                List<BaseEntity> ents = new List<BaseEntity>();
+                Vis.Entities(monument.transform.position, 50, ents);
+                foreach (BaseEntity entity in ents)
                 {
-                    BaseEntity entity = coll.gameObject.GetComponent<BaseEntity>();
-                    if (entity == null) continue;
-                    if (configData.debug) Utils.DoLog($"Found entity: {entity.ShortPrefabName}");
-                    if (entity.ShortPrefabName.Equals("marketterminal") && mt == Vector3.zero)
+                    if (entity.PrefabName.Contains("marketterminal") && mt == Vector3.zero)
                     {
-                        if (configData.debug) Utils.DoLog($"  Found marketterminal at compound at {entity.transform.position}");
                         mt = entity.transform.position;
                     }
-                    else if (entity.ShortPrefabName.Contains("bbq"))
+                    else if (entity.PrefabName.Contains("bbq"))
                     {
-                        if (configData.debug) Utils.DoLog($"  Found bbq at compound at {entity.transform.position}");
                         bbq = entity.transform.position;
                     }
                 }

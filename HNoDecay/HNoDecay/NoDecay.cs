@@ -24,16 +24,16 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-internal class HNoDecay : RustScript
+public class HNoDecay : RustScript
 {
     public HNoDecay()
     {
         Author = "RFC1920";
         Description = "NoDecay for Auxide";
-        Version = new VersionNumber(1, 0, 82);
+        Version = new VersionNumber(1, 0, 88);
     }
-    private ConfigData configData;
-    private bool enabled = true;
+    private static ConfigData configData;
+    private bool isenabled = true;
 
     #region main
     private Dictionary<string, long> lastConnected = new Dictionary<string, long>();
@@ -74,13 +74,12 @@ internal class HNoDecay : RustScript
         }
     }
 
-    //public void OnServerInitialized()
     public override void Initialize()
     {
         Permissions.RegisterPermission(Name, permNoDecayUse);
         Permissions.RegisterPermission(Name, permNoDecayAdmin);
 
-        LoadConfigValues();
+        LoadConfig();
         LoadData();
 
         if (entityinfo.Count == 0) UpdateEnts();
@@ -109,6 +108,7 @@ internal class HNoDecay : RustScript
                 horse.SetDecayActive(true);
             }
         }
+        isenabled = true;
     }
 
     public object CanLootEntity(BasePlayer player, StorageContainer container)
@@ -143,11 +143,12 @@ internal class HNoDecay : RustScript
         CuiHelper.AddUi(player, container);
     }
 
-    public object OnEntitySaved(BuildingPrivlidge buildingPrivilege, BaseNetworkable.SaveInfo saveInfo)
+    public object OnEntitySaved(BaseNetworkable entity, BaseNetworkable.SaveInfo saveInfo)
     {
-        Utils.DoLog("ONENTITYSAVED CALLED");
+        DoLog("ONENTITYSAVED CALLED");
         if (configData.Global.disableWarning)
         {
+            if (!(entity is BuildingPrivlidge buildingPrivilege)) return null;
             if (configData.Global.usePermission)
             {
                 string owner = buildingPrivilege.OwnerID.ToString();
@@ -208,16 +209,17 @@ internal class HNoDecay : RustScript
 
     public object OnTakeDamage(BaseCombatEntity entity, HitInfo hitInfo)
     {
-        //Utils.DoLog(entity.name);
-        if (!enabled) return null;
+        //DoLog(entity.name);
+        if (!isenabled) return null;
         if (entity == null) return null;
         if (hitInfo == null) return null;
-        if (hitInfo?.damageTypes.GetMajorityDamageType() != Rust.DamageType.Decay) return null;
+        if (hitInfo?.HitEntity == null) return null;
+        if (hitInfo?.damageTypes?.GetMajorityDamageType() != Rust.DamageType.Decay) return null;
 
         float damageAmount = 0f;
         DateTime tick = DateTime.Now;
-        string entity_name = entity.LookupPrefab().name.ToLower();
-        //Utils.DoLog($"Decay Entity: {entity_name}");
+        string entity_name = entity?.LookupPrefab()?.name?.ToLower();
+        //DoLog($"Decay Entity: {entity_name}");
         string owner = entity?.OwnerID.ToString();
         bool mundane = false;
         bool isBlock = false;
@@ -336,7 +338,7 @@ internal class HNoDecay : RustScript
         finally
         {
             double ms = (DateTime.Now - tick).TotalMilliseconds;
-            if (ms > configData.Global.warningTime || configData.Debug.outputMundane) Utils.DoLog($"NoDecay.OnEntityTakeDamage on {entity_name} took {ms} ms to execute.");
+            if (ms > configData.Global.warningTime || configData.Debug.outputMundane) DoLog($"NoDecay.OnEntityTakeDamage on {entity_name} took {ms} ms to execute.");
         }
     }
 
@@ -391,6 +393,7 @@ internal class HNoDecay : RustScript
         entityinfo["bbq"] = new List<string>();
         entityinfo["boat"] = new List<string>();
         entityinfo["box"] = new List<string>();
+        entityinfo["building"] = new List<string>();
         entityinfo["campfire"] = new List<string>();
         entityinfo["deployables"] = new List<string>();
         entityinfo["furnace"] = new List<string>();
@@ -425,19 +428,21 @@ internal class HNoDecay : RustScript
             {
                 entityinfo["box"].Add(entity_name);
             }
-            else if (entity_name.Contains("deployed") || entity_name.Contains("shutter") ||
-                     (entity_name.Contains("door") && !entity_name.Contains("doorway")) ||
-                     entity_name.Contains("reinforced") || entity_name.Contains("shopfront") ||
-                     entity_name.Contains("bars") || entity_name.Contains("netting") ||
-                     entity_name.Contains("hatch") || entity_name.Contains("garagedoor") ||
-                     entity_name.Contains("cell") || entity_name.Contains("fence") ||
-                     entity_name.Contains("grill") || entity_name.Contains("speaker") ||
-                     entity_name.Contains("strobe") || entity_name.Contains("strobe") ||
-                     entity_name.Contains("fog") || entity_name.Contains("shopfront") ||
-                     entity_name.Contains("wall.window.bars") || entity_name.Contains("graveyard") ||
-                     entity_name.Contains("candle") || entity_name.Contains("hatchet") ||
-                     entity_name.Contains("jackolantern") || entity_name.Contains("composter") ||
-                     entity_name.Contains("workbench"))
+            else if (entity_name.Contains("shutter") ||
+                 (entity_name.Contains("door") && !entity_name.Contains("doorway")) ||
+                 entity_name.Contains("hatch") || entity_name.Contains("garagedoor") ||
+                 entity_name.Contains("bars") || entity_name.Contains("netting") ||
+                 entity_name.Contains("cell") || entity_name.Contains("fence") ||
+                 entity_name.Contains("reinforced") || entity_name.Contains("composter") ||
+                 entity_name.Contains("workbench") || entity_name.Contains("shopfront") ||
+                 entity_name.Contains("grill") || entity_name.Contains("wall.window.bars"))
+            {
+                entityinfo["building"].Add(entity_name);
+            }
+            else if (entity_name.Contains("deployed") || entity_name.Contains("speaker") ||
+                entity_name.Contains("strobe") || entity_name.Contains("fog") ||
+                entity_name.Contains("graveyard") || entity_name.Contains("candle") ||
+                entity_name.Contains("hatchet") || entity_name.Contains("jackolantern"))
             {
                 entityinfo["deployables"].Add(entity_name);
             }
@@ -753,8 +758,8 @@ internal class HNoDecay : RustScript
             switch (args[0])
             {
                 case "enable":
-                    enabled = !enabled;
-                    Message(player, "ndstatus", enabled.ToString());
+                    isenabled = !isenabled;
+                    Message(player, "ndstatus", isenabled.ToString());
                     SaveConfig(configData);
                     return;
                 case "log":
@@ -792,7 +797,7 @@ internal class HNoDecay : RustScript
                     info += "\n\twater: " + configData.multipliers["water"]; ToString();
                     info += "\n\twood: " + configData.multipliers["wood"]; ToString();
 
-                    info += "\n\n\tEnabled: " + enabled.ToString();
+                    info += "\n\n\tEnabled: " + isenabled.ToString();
                     info += "\n\tdisableWarning: " + configData.Global.disableWarning.ToString();
                     info += "\n\tprotectedDays: " + configData.Global.protectedDays.ToString();
                     info += "\n\tprotectVehicleOnLift: " + configData.Global.protectVehicleOnLift.ToString();
@@ -824,7 +829,7 @@ internal class HNoDecay : RustScript
                         save = true;
                         disabled.Add(id);
                     }
-                    Message(player, "ndstatus", enabled.ToString());
+                    Message(player, "ndstatus", isenabled.ToString());
                     if (Permissions.UserHasPermission(permNoDecayUse, player.UserIDString))
                     {
                         Message(player, "perm");
@@ -841,7 +846,7 @@ internal class HNoDecay : RustScript
                         save = true;
                         disabled.Remove(id);
                     }
-                    Message(player, "ndstatus", enabled.ToString());
+                    Message(player, "ndstatus", isenabled.ToString());
                     if (Permissions.UserHasPermission(permNoDecayUse, player.UserIDString))
                     {
                         Message(player, "perm");
@@ -853,7 +858,7 @@ internal class HNoDecay : RustScript
                     Message(player, "ndison");
                     break;
                 case "?":
-                    Message(player, "ndstatus", enabled.ToString());
+                    Message(player, "ndstatus", isenabled.ToString());
                     if (Permissions.UserHasPermission(permNoDecayUse, player.UserIDString))
                     {
                         Message(player, "perm");
@@ -887,7 +892,7 @@ internal class HNoDecay : RustScript
             return !disabled.Contains(playerid);
         }
 
-        return enabled;
+        return isenabled;
     }
 
     // Sets player status if playerid > 0
@@ -915,7 +920,7 @@ internal class HNoDecay : RustScript
         }
         else
         {
-            enabled = status;
+            isenabled = status;
             SaveConfig(configData);
         }
 
@@ -925,14 +930,14 @@ internal class HNoDecay : RustScript
     private void DisableMe()
     {
         if (!configData.Global.respondToActivationHooks) return;
-        enabled = false;
-        Utils.DoLog($"{Name} disabled");
+        isenabled = false;
+        DoLog($"{Name} disabled");
     }
     private void EnableMe()
     {
         if (!configData.Global.respondToActivationHooks) return;
-        enabled = true;
-        Utils.DoLog($"{Name} enabled");
+        isenabled = true;
+        DoLog($"{Name} enabled");
     }
     #endregion
 
@@ -960,8 +965,8 @@ internal class HNoDecay : RustScript
     {
         if (configData.Debug.outputToRcon)
         {
-            if (!mundane) Utils.DoLog($"{message}");
-            else if (mundane && configData.Debug.outputMundane) Utils.DoLog($"{message}");
+            if (!mundane) DoLog($"{message}");
+            else if (mundane && configData.Debug.outputMundane) DoLog($"{message}");
         }
     }
     #endregion
@@ -1009,8 +1014,7 @@ internal class HNoDecay : RustScript
 
     public void LoadDefaultConfig()
     {
-        Utils.DoLog("Creating new config file");
-        ConfigData configuration = new ConfigData
+        configData = new ConfigData
         {
             Debug = new Debug(),
             Global = new Global()
@@ -1033,6 +1037,7 @@ internal class HNoDecay : RustScript
                 { "bbq", 0f },
                 { "boat", 0f },
                 { "box", 0f },
+                { "building", 0f },
                 { "campfire", 0f },
                 { "entityCupboard", 0f },
                 { "furnace", 0f },
@@ -1056,10 +1061,10 @@ internal class HNoDecay : RustScript
             },
             Version = Version
         };
-        SaveConfig(configuration);
+        SaveConfig(configData);
     }
 
-    private void LoadConfigValues()
+    private void LoadConfig()
     {
         if (config.Exists())
         {

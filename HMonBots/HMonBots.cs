@@ -46,13 +46,13 @@ internal class HMonBots : RustScript
     #endregion vars
 
     #region Message
-    private void DoLog(string message)
-    {
-        if (configData.Options.debug)
-        {
-            Utils.DoLog(message);
-        }
-    }
+    //private override void DoLog(string message)
+    //{
+    //    if (configData.Options.debug)
+    //    {
+    //        DoLog(message);
+    //    }
+    //}
     #endregion Message
 
     #region global
@@ -106,16 +106,16 @@ internal class HMonBots : RustScript
     //private void OnServerInitialized()
     public override void Initialize()
     {
-        Utils.DoLog("HMonBots Initializing...");
+        DoLog("HMonBots Initializing...");
         LoadConfigVariables();
         Instance = this;
 
         //AddCovalenceCommand("mb", "cmdMB");
 
         FindMonuments();
-        Utils.DoLog("Loading data");
+        DoLog("Loading data");
         LoadData();
-        Utils.DoLog("Loading bots");
+        DoLog("Loading bots");
         LoadBots();
 
         foreach (KeyValuePair<string, Vector3> mon in monPos)
@@ -729,7 +729,7 @@ internal class HMonBots : RustScript
             }
             else if (newsave && !monPos.ContainsKey(sp.Key) && sp.Value.spawnCount > 0)
             {
-                Utils.DoLog($"Server wipe was detected.  Will not spawn bots for profile '{sp.Key}' since it was either custom or the monument does not exist.");
+                DoLog($"Server wipe was detected.  Will not spawn bots for profile '{sp.Key}' since it was either custom or the monument does not exist.");
                 continue;
             }
 
@@ -892,10 +892,10 @@ internal class HMonBots : RustScript
         data.WriteObject("spawnpoints", spawnpoints);
     }
 
-    public void OnPlayerInput(BasePlayer player, InputState input)
+    public object OnPlayerInput(BasePlayer player, InputState input)
     {
-        if (player == null || input == null) return;
-        if (!input.WasJustPressed(BUTTON.USE)) return;
+        if (player == null || input == null) return null;
+        if (!input.WasJustPressed(BUTTON.USE)) return null;
 
         RaycastHit hit;
         if (Physics.Raycast(player.eyes.HeadRay(), out hit, 3f, playerMask))
@@ -903,11 +903,12 @@ internal class HMonBots : RustScript
             BasePlayer pl = hit.GetEntity().ToPlayer();
             MonBotPlayer hp = pl.GetComponent<MonBotPlayer>();
 
-            if (hp == null) return;
+            if (hp == null) return null;
 
             //ScriptManager.Broadcast("OnUseNPC", hp.player, player);
             SaveData();
         }
+        return null;
     }
 
     public void OnEntityDeath(BaseCombatEntity entity, HitInfo hitinfo)
@@ -918,7 +919,7 @@ internal class HMonBots : RustScript
         if (npc == null) return;
         DoLog("OnEntityDeath: Found MonBot player");
 
-        hpcacheid.Remove(humannpc.net.ID);
+        hpcacheid.Remove(humannpc.net.ID.Value);
 
         if (npc.info.dropWeapon)
         {
@@ -928,7 +929,7 @@ internal class HMonBots : RustScript
                 DoLog($"Dropping {npc.info.displayName}'s activeItem: {npc.activeItem.info.shortname}");
                 Vector3 vector3 = new Vector3(UnityEngine.Random.Range(-2f, 2f), 0.2f, UnityEngine.Random.Range(-2f, 2f));
                 npc.activeItem.Drop(humannpc.GetDropPosition(), humannpc.GetInheritedDropVelocity() + (vector3.normalized * 3f));
-                humannpc.svActiveItemID = 0;
+                humannpc.svActiveItemID = new ItemId(0);
             }
         }
 
@@ -1141,7 +1142,7 @@ internal class HMonBots : RustScript
             foreach (ulong botid in profile.Value.ids)
             {
                 flag = true;
-                BaseNetworkable.serverEntities.Find((uint)botid)?.Kill();
+                BaseNetworkable.serverEntities.Find(new NetworkableId((uint)botid))?.Kill();
             }
         }
         profile.Value.zonemap.Remove(group);
@@ -1179,7 +1180,7 @@ internal class HMonBots : RustScript
         foreach (ulong id in spawnpoints[group].ids)
         {
             // Remove the bots
-            BaseNetworkable.serverEntities.Find((uint)id)?.Kill();
+            BaseNetworkable.serverEntities.Find(new NetworkableId((uint)id))?.Kill();
             ids[i] = id.ToString();
             i++;
         }
@@ -2399,7 +2400,7 @@ internal class HMonBots : RustScript
     #region config
     public void LoadDefaultConfig()
     {
-        Utils.DoLog("Creating new config file.");
+        DoLog("Creating new config file.");
         ConfigData configuration = new ConfigData
         {
             Options = new Options()

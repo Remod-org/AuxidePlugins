@@ -7,6 +7,8 @@ using Facepunch.Extend;
 
 // TODO: Add SQLite and MySQL database support
 
+[Info("HEconomics", "RFC1920", "1.0.2")]
+[Description("A version of Economics for Auxide")]
 public class HEconomics : RustScript
 {
     #region Configuration

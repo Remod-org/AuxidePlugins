@@ -1,11 +1,11 @@
 using Auxide;
 
-public class TestScript : RustScript
+public class Template : RustScript
 {
     private static ConfigData configData;
     public bool enableme = true;
 
-	public TestScript()
+	public Template()
 	{
         Author = "RFC1920";
         Version = new VersionNumber(1, 0, 1);
@@ -209,7 +209,7 @@ public class TestScript : RustScript
                 enableme = !enableme;
                 configData.Enable = enableme;
                 SaveConfig(configData);
-                Message(player, enableme ? "TestScript enabled" : "TestScript disabled");
+                Message(player, enableme ? "Template enabled" : "Template disabled");
                 break;
         }
     }
