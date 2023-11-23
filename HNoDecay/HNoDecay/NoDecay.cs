@@ -48,7 +48,7 @@ public class HNoDecay : RustScript
     //private readonly Plugin ZoneManager, GridAPI, JPipes;
 
     #region Message
-//    private void LMessage(BasePlayer player, string key, params object[] args) => player.Reply(Lang(key, player.Id, args));
+    //    private void LMessage(BasePlayer player, string key, params object[] args) => player.Reply(Lang(key, player.Id, args));
 
     public override void LoadDefaultMessages()
     {
@@ -95,12 +95,12 @@ public class HNoDecay : RustScript
 
                 if (newdecaytime > 0)
                 {
-                    DoLog($"Adding {Math.Floor(newdecaytime)} minutes of decay time to horse {horse.net.ID}, now {Math.Floor(180f + newdecaytime)} minutes", true);
+                    _DoLog($"Adding {Math.Floor(newdecaytime)} minutes of decay time to horse {horse.net.ID}, now {Math.Floor(180f + newdecaytime)} minutes", true);
                     horse.AddDecayDelay(newdecaytime);
                 }
                 else
                 {
-                    DoLog($"Subtracting {Math.Abs(Math.Floor(newdecaytime))} minutes of decay time from horse {horse.net.ID}, now {Math.Floor(180f + newdecaytime)} minutes", true);
+                    _DoLog($"Subtracting {Math.Abs(Math.Floor(newdecaytime))} minutes of decay time from horse {horse.net.ID}, now {Math.Floor(180f + newdecaytime)} minutes", true);
                     //horse.nextDecayTime = Time.time + newdecaytime;
                     horse.AddDecayDelay(newdecaytime);
                 }
@@ -116,7 +116,7 @@ public class HNoDecay : RustScript
         if (!configData.Global.disableLootWarning) return null;
         if (!Permissions.UserHasPermission(permNoDecayUse, player.UserIDString) && configData.Global.usePermission) return null;
         if (container == null) return null;
-        var privs = container.GetComponentInParent<BuildingPrivlidge>();
+        BuildingPrivlidge privs = container.GetComponentInParent<BuildingPrivlidge>();
         if (privs == null) return null;
 
         TcOverlay(player);//, privs);
@@ -145,7 +145,7 @@ public class HNoDecay : RustScript
 
     public object OnEntitySaved(BaseNetworkable entity, BaseNetworkable.SaveInfo saveInfo)
     {
-        DoLog("ONENTITYSAVED CALLED");
+        //DoLog("ONENTITYSAVED CALLED");
         if (configData.Global.disableWarning)
         {
             if (!(entity is BuildingPrivlidge buildingPrivilege)) return null;
@@ -156,7 +156,7 @@ public class HNoDecay : RustScript
                 {
                     if (owner != "0")
                     {
-                        DoLog($"TC owner {owner} has NoDecay permission!");
+                        _DoLog($"TC owner {owner} has NoDecay permission!");
                     }
                 }
                 else
@@ -166,7 +166,7 @@ public class HNoDecay : RustScript
             }
             if (disabled.Contains(buildingPrivilege.OwnerID))
             {
-                DoLog($"TC owner {buildingPrivilege.OwnerID} has disabled NoDecay.");
+                _DoLog($"TC owner {buildingPrivilege.OwnerID} has disabled NoDecay.");
                 return null;
             }
 
@@ -230,17 +230,17 @@ public class HNoDecay : RustScript
             {
                 if (owner != "0")
                 {
-                    DoLog($"{entity_name} owner {owner} has NoDecay permission!");
+                    _DoLog($"{entity_name} owner {owner} has NoDecay permission!");
                 }
             }
             else
             {
-                DoLog($"{entity_name} owner {owner} does NOT have NoDecay permission.  Standard decay in effect.");
+                _DoLog($"{entity_name} owner {owner} does NOT have NoDecay permission.  Standard decay in effect.");
                 return null;
             }
             if (disabled.Contains(entity.OwnerID))
             {
-                DoLog($"Entity owner {entity.OwnerID} has disabled NoDecay.");
+                _DoLog($"Entity owner {entity.OwnerID} has disabled NoDecay.");
                 return null;
             }
         }
@@ -254,12 +254,12 @@ public class HNoDecay : RustScript
                 float days = Math.Abs((now - lc) / 86400);
                 if (days > configData.Global.protectedDays)
                 {
-                    DoLog($"Allowing decay for owner offline for {configData.Global.protectedDays} days");
+                    _DoLog($"Allowing decay for owner offline for {configData.Global.protectedDays} days");
                     return null;
                 }
                 else
                 {
-                    DoLog($"Owner was last connected {days} days ago and is still protected...");
+                    _DoLog($"Owner was last connected {days} days ago and is still protected...");
                 }
             }
         }
@@ -275,11 +275,11 @@ public class HNoDecay : RustScript
             }
             else if (entity is ModularCar && configData.Global.protectVehicleOnLift)
             {
-                DoLog("Checking if car is on a lift.");
+                _DoLog("Checking if car is on a lift.");
                 ModularCarGarage garage = entity.GetComponentInParent<ModularCarGarage>();
                 if (garage != null)
                 {
-                    DoLog("It is! Blocking damage.");
+                    _DoLog("It is! Blocking damage.");
                     return null;
                 }
             }
@@ -292,7 +292,7 @@ public class HNoDecay : RustScript
                     {
                         mundane = true;
                     }
-                    DoLog($"Found {entity_name} listed in {entity_type.Key}", mundane);
+                    _DoLog($"Found {entity_name} listed in {entity_type.Key}", mundane);
                     if (configData.multipliers.ContainsKey(entity_type.Key))
                     {
                         damageAmount = before * configData.multipliers[entity_type.Key];
@@ -306,11 +306,11 @@ public class HNoDecay : RustScript
             {
                 // Verify that we should check for a cupboard and ensure that one exists.
                 // If so, multiplier will be set to configData.multipliers['entityCupboard'].
-                DoLog("NoDecay checking for local cupboard.", mundane);
+                _DoLog("NoDecay checking for local cupboard.", mundane);
 
                 if (CheckCupboardEntity(entity, mundane))
                 {
-                    DoLog("Entity in range of cupboard.");
+                    _DoLog("Entity in range of cupboard.");
                     damageAmount = before * configData.multipliers["entityCupboard"];
                 }
             }
@@ -318,27 +318,30 @@ public class HNoDecay : RustScript
             string pos = configData.Debug.logPosition ? $" ({entity.transform?.position.ToString()})" : "";
             bool destroy = configData.Global.DestroyOnZero;
 
-            NextTick(() =>
-            {
-                DoLog($"Decay [{entity_name}{pos} - {entity?.net.ID}] before: {before} after: {damageAmount}, item health {entity?.health}", mundane);
+            //NextTick(() =>
+            ////{
+                _DoLog($"Decay [{entity_name}{pos} - {entity?.net.ID}] before: {before} after: {damageAmount}, item health {entity?.health}", mundane);
 
                 entity.health -= damageAmount;
                 if (entity?.health == 0 && destroy)
                 {
-                    DoLog($"Entity {entity_name}{pos} completely decayed - destroying!", mundane);
-                    if (entity != null && !entity.IsDestroyed)
+                    _DoLog($"Entity {entity_name}{pos} completely decayed - destroying!", mundane);
+                    if (entity?.IsDestroyed == false)
                     {
                         UnityEngine.Object.Destroy(entity);
                         entity?.Kill(BaseNetworkable.DestroyMode.Gib);
                     }
                 }
-            });
+            //});
             return true;
         }
         finally
         {
             double ms = (DateTime.Now - tick).TotalMilliseconds;
-            if (ms > configData.Global.warningTime || configData.Debug.outputMundane) DoLog($"NoDecay.OnEntityTakeDamage on {entity_name} took {ms} ms to execute.");
+            if (ms > configData.Global.warningTime || configData.Debug.outputMundane)
+            {
+                _DoLog($"NoDecay.OnEntityTakeDamage on {entity_name} took {ms} ms to execute.");
+            }
         }
     }
 
@@ -353,12 +356,12 @@ public class HNoDecay : RustScript
             float newdecaytime = (180f / configData.multipliers["horse"]) - 180f;
             if (newdecaytime > 0)
             {
-                DoLog($"Adding {Math.Floor(newdecaytime)} minutes of decay time to horse {horse.net.ID}, now {Math.Floor(180f + newdecaytime)} minutes", true);
+                _DoLog($"Adding {Math.Floor(newdecaytime)} minutes of decay time to horse {horse.net.ID}, now {Math.Floor(180f + newdecaytime)} minutes", true);
                 horse.AddDecayDelay(newdecaytime);
             }
             else
             {
-                DoLog($"Subtracting {Math.Abs(Math.Floor(newdecaytime))} minutes of decay time from horse {horse.net.ID}, now {Math.Floor(180f + newdecaytime)} minutes", true);
+                _DoLog($"Subtracting {Math.Abs(Math.Floor(newdecaytime))} minutes of decay time from horse {horse.net.ID}, now {Math.Floor(180f + newdecaytime)} minutes", true);
                 horse.AddDecayDelay(newdecaytime);
             }
             horse.SetDecayActive(true);
@@ -368,14 +371,14 @@ public class HNoDecay : RustScript
     // Workaround for car chassis that won't die
     public void OnEntityDeath(ModularCar car, HitInfo hitinfo)
     {
-        DoLog("Car died!  Checking for associated parts...");
+        _DoLog("Car died!  Checking for associated parts...");
         List<BaseEntity> ents = new List<BaseEntity>();
         Vis.Entities(car.transform.position, 1f, ents);
         foreach (BaseEntity ent in ents)
         {
             if (ent.name.Contains("module_car_spawned") && !ent.IsDestroyed)
             {
-                DoLog($"Killing {ent.ShortPrefabName}");
+                _DoLog($"Killing {ent.ShortPrefabName}");
                 ent.Kill(BaseNetworkable.DestroyMode.Gib);
             }
         }
@@ -532,21 +535,21 @@ public class HNoDecay : RustScript
         bool isHighWall = block.LookupPrefab().name.Contains("wall.external");
         bool isHighGate = block.LookupPrefab().name.Contains("gates.external");
 
-        string type = null;
+        string type;
         bool hascup = true; // Assume true (has cupboard or we don't require one)
 
-        DoLog($"NoDecay checking for block damage to {block.LookupPrefab().name}");
+        //DoLog($"NoDecay checking for block damage to {block.LookupPrefab().name}");
 
         // Verify that we should check for a cupboard and ensure that one exists.
         // If not, multiplier will be standard of 1.0f (hascup true).
         if (configData.Global.requireCupboard)
         {
-            DoLog("NoDecay checking for local cupboard.");
+            //DoLog("NoDecay checking for local cupboard.");
             hascup = CheckCupboardBlock(block, entity.LookupPrefab().name, block.grade.ToString().ToLower());
         }
         else
         {
-            DoLog("NoDecay not checking for local cupboard.");
+            //DoLog("NoDecay not checking for local cupboard.");
         }
 
         switch (block.grade)
@@ -598,14 +601,14 @@ public class HNoDecay : RustScript
                 type = "armored";
                 break;
             default:
-                DoLog($"Decay ({type}) has unknown grade type.");
+                //DoLog($"Decay ({type}) has unknown grade type.");
                 type = "unknown";
                 break;
         }
 
         damageAmount = before * multiplier;
 
-        DoLog($"Decay ({type}) before: {before} after: {damageAmount}");
+        //DoLog($"Decay ({type}) before: {before} after: {damageAmount}");
         return damageAmount;
     }
 
@@ -619,7 +622,7 @@ public class HNoDecay : RustScript
                 BuildingPrivlidge item = building.buildingPrivileges[i];
                 if (!(item == null) && item.IsOlderThan(buildingPrivlidge))
                 {
-                    DoLog("CheckCupboardBlock:     Found block connected to cupboard!");
+                    //DoLog("CheckCupboardBlock:     Found block connected to cupboard!");
                     buildingPrivlidge = item;
                 }
             }
@@ -635,7 +638,7 @@ public class HNoDecay : RustScript
                 {
                     if (p.userid == block.OwnerID)
                     {
-                        DoLog("CheckCupboardBlock:     Found block in range of cupboard!");
+                        //DoLog("CheckCupboardBlock:     Found block in range of cupboard!");
                         return cup;
                     }
                 }
@@ -648,7 +651,7 @@ public class HNoDecay : RustScript
     private bool CheckCupboardBlock(BuildingBlock block, string ename = "unknown", string grade = "")
     {
         BuildingManager.Building building = block.GetBuilding();
-        DoLog($"CheckCupboardBlock:   Checking for cupboard connected to {grade} {ename}.");
+        //DoLog($"CheckCupboardBlock:   Checking for cupboard connected to {grade} {ename}.");
 
         if (building != null)
         {
@@ -656,16 +659,16 @@ public class HNoDecay : RustScript
             //if (building.GetDominatingBuildingPrivilege() == null)
             if (GetBuildingPrivilege(building, block) == null)
             {
-                DoLog("CheckCupboardBlock:     Block NOT owned by cupboard!");
+                //DoLog("CheckCupboardBlock:     Block NOT owned by cupboard!");
                 return false;
             }
 
-            DoLog("CheckCupboardBlock:     Block owned by cupboard!");
+            //DoLog("CheckCupboardBlock:     Block owned by cupboard!");
             return true;
         }
         else
         {
-            DoLog("CheckCupboardBlock:     Unable to find cupboard.");
+            //DoLog("CheckCupboardBlock:     Unable to find cupboard.");
             return false;
         }
     }
@@ -679,31 +682,31 @@ public class HNoDecay : RustScript
             List<BuildingPrivlidge> cups = new List<BuildingPrivlidge>();
             Vis.Entities(entity.transform.position, configData.Global.cupboardRange, cups, targetLayer);
 
-            DoLog($"CheckCupboardEntity:   Checking for cupboard within {configData.Global.cupboardRange}m of {entity.ShortPrefabName}.", mundane);
+            //DoLog($"CheckCupboardEntity:   Checking for cupboard within {configData.Global.cupboardRange}m of {entity.ShortPrefabName}.", mundane);
 
             if (cups.Count > 0)
             {
                 // cupboard overlap.  Entity safe from decay.
-                DoLog("CheckCupboardEntity:     Found entity layer in range of cupboard!", mundane);
+                //DoLog("CheckCupboardEntity:     Found entity layer in range of cupboard!", mundane);
                 return true;
             }
 
-            DoLog("CheckCupboardEntity:     Unable to find entity layer in range of cupboard.", mundane);
+            //DoLog("CheckCupboardEntity:     Unable to find entity layer in range of cupboard.", mundane);
             return false;
         }
 
         // New method of simply checking for the entity's building privilege.
-        DoLog($"CheckCupboardEntity:   Checking for building privilege for {entity.ShortPrefabName}.", mundane);
+        //DoLog($"CheckCupboardEntity:   Checking for building privilege for {entity.ShortPrefabName}.", mundane);
         BuildingPrivlidge tc = entity.GetBuildingPrivilege();
 
         if (tc != null)
         {
             // cupboard overlap.  Entity safe from decay.
-            DoLog("CheckCupboardEntity:     Found entity layer in range of cupboard!", mundane);
+            //DoLog("CheckCupboardEntity:     Found entity layer in range of cupboard!", mundane);
             return true;
         }
 
-        DoLog("CheckCupboardEntity:     Unable to find entity layer in range of cupboard.", mundane);
+        //DoLog("CheckCupboardEntity:     Unable to find entity layer in range of cupboard.", mundane);
         return false;
     }
 
@@ -718,10 +721,10 @@ public class HNoDecay : RustScript
         if (!(configData.Global.blockCupboardResources || configData.Global.blockCupboardWood)) return null;
 
         string res = item?.info?.shortname;
-        DoLog($"Player trying to add {res} to a cupboard!");
+        //DoLog($"Player trying to add {res} to a cupboard!");
         if (res.Equals("wood") && configData.Global.blockCupboardWood)
         {
-            DoLog($"Player blocked from adding {res} to a cupboard!");
+            //DoLog($"Player blocked from adding {res} to a cupboard!");
             return ItemContainer.CanAcceptResult.CannotAcceptRightNow;
         }
         else if (configData.Global.blockCupboardResources)
@@ -731,7 +734,7 @@ public class HNoDecay : RustScript
                 || (res.Equals("metal.fragments") && configData.Global.blockCupboardMetal)
                 || (res.Equals("metal.refined") && configData.Global.blockCupboardArmor))
             {
-                DoLog($"Player blocked from adding {res} to a cupboard!");
+                //DoLog($"Player blocked from adding {res} to a cupboard!");
                 return ItemContainer.CanAcceptResult.CannotAcceptRightNow;
             }
         }
@@ -931,13 +934,13 @@ public class HNoDecay : RustScript
     {
         if (!configData.Global.respondToActivationHooks) return;
         isenabled = false;
-        DoLog($"{Name} disabled");
+        //DoLog($"{Name} disabled");
     }
     private void EnableMe()
     {
         if (!configData.Global.respondToActivationHooks) return;
         isenabled = true;
-        DoLog($"{Name} enabled");
+        //DoLog($"{Name} enabled");
     }
     #endregion
 
@@ -961,12 +964,12 @@ public class HNoDecay : RustScript
     }
 
     // Just here to cleanup the code a bit
-    private void DoLog(string message, bool mundane = false)
+    private void _DoLog(string message, bool mundane = false)
     {
         if (configData.Debug.outputToRcon)
         {
-            if (!mundane) DoLog($"{message}");
-            else if (mundane && configData.Debug.outputMundane) DoLog($"{message}");
+            if (!mundane) Utils.DoLog($"{message}");
+            else if (mundane && configData.Debug.outputMundane) Utils.DoLog($"{message}");
         }
     }
     #endregion

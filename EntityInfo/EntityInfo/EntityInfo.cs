@@ -1,6 +1,8 @@
+using Auxide;
 using Facepunch;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 [Info("EntityInfo", "RFC1920", "1.0.1")]
@@ -218,9 +220,8 @@ internal class EntityInfo : RustScript
                     BaseEntity baseLock = targetEntity.GetSlot(BaseEntity.Slot.Lock);
                     if (baseLock is CodeLock)
                     {
-                        CodeLockExtension codeLock = baseLock as CodeLockExtension;
-                        string keyCode = codeLock.code;
-                        string guestCode = codeLock.guestCode;
+                        string keyCode = baseLock.GetFieldValue<string>("code");
+                        string guestCode = baseLock.GetFieldValue<string>("guestCode");
                         msg += "\n" + string.Format("Lock: Codes", keyCode, guestCode);
                     }
                 }
@@ -426,7 +427,7 @@ internal class EntityInfo : RustScript
 
     private string FindPlayerName(ulong playerID)
     {
-        if (playerID > 76560000000000000L)
+        if (playerID.IsSteamId())
         {
             BasePlayer player = FindPlayerByPartialName(playerID.ToString());
             if (player)
@@ -506,7 +507,7 @@ internal class EntityInfo : RustScript
 
     private BasePlayer GetOwnerPlayer(BaseEntity entity)
     {
-        if (entity.OwnerID > 76560000000000000L)
+        if (entity.OwnerID.IsSteamId())
         {
             return BasePlayer.FindByID(entity.OwnerID);
         }
@@ -516,7 +517,7 @@ internal class EntityInfo : RustScript
 
     private BasePlayer GetOwnerBasePlayer(BaseEntity entity)
     {
-        if (entity.OwnerID > 76560000000000000L)
+        if (entity.OwnerID.IsSteamId())
         {
             return BasePlayer.Find(entity.OwnerID.ToString());
         }
@@ -528,6 +529,17 @@ internal class EntityInfo : RustScript
     {
         entity.OwnerID = 0;
     }
-
     #endregion
+}
+
+namespace Auxide
+{
+    public static class CodeLockExtension
+    {
+        public static T GetFieldValue<T>(this object obj, string name)
+        {
+            FieldInfo field = obj.GetType().GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            return (T)field?.GetValue(obj);
+        }
+    }
 }

@@ -63,7 +63,6 @@ namespace Namespace
         {
             //Instance = this;
             //DoLog("Creating database connection for main thread.");
-            LoadConfigVariables();
 
             Auxide.Scripting.DynamicConfigFile dataFile = data.GetDatafile("nextgenpve");
             dataFile.Save();
@@ -75,10 +74,10 @@ namespace Namespace
             enabled = true;
 
             ConsoleSystem.Run(ConsoleSystem.Option.Server.FromServer(), "server.pve 0");
-            LoadConfigVariables();
+            LoadConfig();
             LoadData();
 
-            DoLog($"Opening {connStr}");
+            _DoLog($"Opening {connStr}");
             sqlConnection = new SqliteConnection(connStr);
             sqlConnection.Open();
 
@@ -107,7 +106,7 @@ namespace Namespace
         {
             if (command != "pverule" && isopen.Contains(player.userID))
             {
-                if (configData.Options.debug) DoLog($"OnPlayerCommand: {command} BLOCKED");
+                if (configData.Options.debug) _DoLog($"OnPlayerCommand: {command} BLOCKED");
                 return true;
             }
             return null;
@@ -117,7 +116,7 @@ namespace Namespace
         {
             if (command != "pverule" && isopen.Contains(player.userID))
             {
-                if (configData.Options.debug) DoLog($"OnPlayerCommand: {command} BLOCKED");
+                if (configData.Options.debug) _DoLog($"OnPlayerCommand: {command} BLOCKED");
                 return true;
             }
             return null;
@@ -125,7 +124,7 @@ namespace Namespace
 
         public void OnNewSave()
         {
-            DoLog("Wipe detected.  Clearing zone maps...");
+            _DoLog("Wipe detected.  Clearing zone maps...");
             ngpvezonemaps = new Dictionary<string, NextGenPVEZoneMap>();
             NewPurgeSchedule();
             SaveData();
@@ -136,7 +135,7 @@ namespace Namespace
         {
             // Populate the entities table with any new entities (Typically only at wipe but can be run manually via pveupdate.)
             // All new ents are added as unknown for manual recategorization.
-            DoLog("Finding new entity types...");
+            _DoLog("Finding new entity types...");
             List<string> names = new List<string>();
             foreach (UnityEngine.Object obj in Resources.FindObjectsOfTypeAll(new BaseCombatEntity().GetType()))
             {
@@ -155,12 +154,12 @@ namespace Namespace
                     {
                         if (us.ExecuteNonQuery() > 0)
                         {
-                            DoLog($"Added {objname} as {category}.");
+                            _DoLog($"Added {objname} as {category}.");
                         }
                     }
                 }
             }
-            DoLog("Done!");
+            _DoLog("Done!");
         }
 
         public override void LoadDefaultMessages()
@@ -423,12 +422,12 @@ namespace Namespace
             {
                 if (sam.OwnerID == 0 && configData.Options.NPCSamSitesIgnorePlayers)
                 {
-                    DoLog($"Skipping targeting by NPC SamSite of player {player.displayName}");
+                    _DoLog($"Skipping targeting by NPC SamSite of player {player.displayName}");
                     return true; // block
                 }
                 else if (sam.OwnerID > 0 && configData.Options.SamSitesIgnorePlayers)
                 {
-                    DoLog($"Skipping targeting by SamSite of player {player.displayName}");
+                    _DoLog($"Skipping targeting by SamSite of player {player.displayName}");
                     return true; // block
                 }
 
@@ -558,7 +557,7 @@ namespace Namespace
             {
                 if (ent.ShortPrefabName == "scraptransporthelicopter" && configData.Options.BlockScrapHeliFallDamage)
                 {
-                    DoLog("Fall caused by scrapheli.  Blocking...");
+                    _DoLog("Fall caused by scrapheli.  Blocking...");
                     return true;
                 }
             }
@@ -589,7 +588,7 @@ namespace Namespace
             if (string.IsNullOrEmpty(key)) return false;
             if (rulesetname == null) return false;
 
-            DoLog($"AddOrUpdateMapping called for ruleset: {rulesetname}, zone: {key}", 0);
+            _DoLog($"AddOrUpdateMapping called for ruleset: {rulesetname}, zone: {key}", 0);
             bool foundrs = false;
             using (SqliteConnection c = new SqliteConnection(connStr))
             {
@@ -619,7 +618,7 @@ namespace Namespace
                 using (SqliteConnection c = new SqliteConnection(connStr))
                 {
                     c.Open();
-                    DoLog($"UPDATE ngpve_rulesets SET zone='lookup' WHERE rulesetname='{rulesetname}'");
+                    _DoLog($"UPDATE ngpve_rulesets SET zone='lookup' WHERE rulesetname='{rulesetname}'");
                     using (SqliteCommand cmd = new SqliteCommand($"UPDATE ngpve_rulesets SET zone='lookup' WHERE name='{rulesetname}'", c))
                     {
                         cmd.ExecuteNonQuery();
@@ -632,7 +631,7 @@ namespace Namespace
                 using (SqliteConnection c = new SqliteConnection(connStr))
                 {
                     c.Open();
-                    DoLog($"INSERT INTO ngpve_rulesets VALUES('{rulesetname}', '1', '1', '1', 'lookup', '', '', '', '', 0)");
+                    _DoLog($"INSERT INTO ngpve_rulesets VALUES('{rulesetname}', '1', '1', '1', 'lookup', '', '', '', '', 0)");
 
                     using (SqliteCommand cmd = new SqliteCommand($"INSERT INTO ngpve_rulesets VALUES('{rulesetname}', '1', '1', '1', 'lookup', '', '', '', '', 0)", c))
                     {
@@ -651,7 +650,7 @@ namespace Namespace
             if (string.IsNullOrEmpty(key)) return false;
             List<string> foundrs = new List<string>();
 
-            DoLog($"RemoveMapping called for zone: {key}", 0);
+            _DoLog($"RemoveMapping called for zone: {key}", 0);
 
             using (SqliteConnection c = new SqliteConnection(connStr))
             {
@@ -700,14 +699,14 @@ namespace Namespace
             string majority = hitinfo.damageTypes?.GetMajorityDamageType().ToString();
             if (hitinfo?.damageTypes?.GetMajorityDamageType() == Rust.DamageType.Decay) return null;
 
-            if (configData.Options.debug) DoLog("ENTRY:");
-            if (configData.Options.debug) DoLog("Checking for fall damage");
+            if (configData.Options.debug) _DoLog("ENTRY:");
+            if (configData.Options.debug) _DoLog("Checking for fall damage");
             if (majority == "Fall" && hitinfo?.Initiator == null)
             {
-                DoLog($"Null initiator for attack on {entity?.ShortPrefabName} by Fall");
+                _DoLog($"Null initiator for attack on {entity?.ShortPrefabName} by Fall");
                 if (BlockFallDamage(entity))
                 {
-                    if (configData.Options.debug) DoLog(":EXIT FALL");
+                    if (configData.Options.debug) _DoLog(":EXIT FALL");
                     return false;
                 }
             }
@@ -731,33 +730,33 @@ namespace Namespace
             bool canhurt;
             if (IsMLRS(hitinfo))
             {
-                if (configData.Options.debug) DoLog($"attacker prefab: {hitinfo.WeaponPrefab?.ShortPrefabName}, victim prefab: {entity.ShortPrefabName}");
-                if (configData.Options.debug) DoLog("Calling EvaluateRulesets: MLRS");
+                if (configData.Options.debug) _DoLog($"attacker prefab: {hitinfo.WeaponPrefab?.ShortPrefabName}, victim prefab: {entity.ShortPrefabName}");
+                if (configData.Options.debug) _DoLog("Calling EvaluateRulesets: MLRS");
                 canhurt = EvaluateRulesets(hitinfo.WeaponPrefab, entity, out stype, out ttype);
             }
             else
             {
-                if (configData.Options.debug) DoLog($"attacker prefab: {hitinfo.Initiator?.ShortPrefabName}, victim prefab: {entity.ShortPrefabName}");
-                if (configData.Options.debug) DoLog("Calling EvaluateRulesets: Standard");
+                if (configData.Options.debug) _DoLog($"attacker prefab: {hitinfo.Initiator?.ShortPrefabName}, victim prefab: {entity.ShortPrefabName}");
+                if (configData.Options.debug) _DoLog("Calling EvaluateRulesets: Standard");
                 canhurt = EvaluateRulesets(hitinfo.Initiator, entity, out stype, out ttype);
             }
             if (stype.Length == 0 && ttype.Length == 0)
             {
-                if (configData.Options.debug) DoLog("Calling EvaluateRulesets DETECTION FAILED");
+                if (configData.Options.debug) _DoLog("Calling EvaluateRulesets DETECTION FAILED");
                 return null;
             }
-            if (configData.Options.debug) DoLog("Calling EvaluateRulesets PASSED");
+            if (configData.Options.debug) _DoLog("Calling EvaluateRulesets PASSED");
 
             if (stype == "BasePlayer")
             {
                 BasePlayer hibp = hitinfo.Initiator as BasePlayer;
-                if (configData.Options.debug) DoLog("Checking for god perms");
+                if (configData.Options.debug) _DoLog("Checking for god perms");
                 if (hibp != null && Permissions.UserHasPermission(permNextGenPVEGod, hibp.UserIDString))
                 {
-                    DoLog("Admin almighty!");
+                    _DoLog("Admin almighty!");
                     return null;
                 }
-                if (configData.Options.debug) DoLog("Checking for suicide flag or friendly fire");
+                if (configData.Options.debug) _DoLog("Checking for suicide flag or friendly fire");
                 if (ttype == "BasePlayer")
                 {
                     ulong sid = hibp.userID;
@@ -766,12 +765,12 @@ namespace Namespace
                     {
                         if (sid == tid && configData.Options.AllowSuicide)
                         {
-                            DoLog("AllowSuicide TRUE");
+                            _DoLog("AllowSuicide TRUE");
                             canhurt = true;
                         }
                         else if (Utils.IsFriend(sid, tid) && configData.Options.AllowFriendlyFire)
                         {
-                            DoLog("AllowFriendlyFire TRUE");
+                            _DoLog("AllowFriendlyFire TRUE");
                             canhurt = true;
                         }
                     }
@@ -780,13 +779,13 @@ namespace Namespace
 
             if (canhurt)
             {
-                DoLog($"DAMAGE ALLOWED for {stype} attacking {ttype}, majority damage type {majority}");
-                if (configData.Options.debug) DoLog(":EXIT ALLOWED");
+                _DoLog($"DAMAGE ALLOWED for {stype} attacking {ttype}, majority damage type {majority}");
+                if (configData.Options.debug) _DoLog(":EXIT ALLOWED");
                 return null;
             }
 
-            DoLog($"DAMAGE BLOCKED for {stype} attacking {ttype}, majority damage type {majority}");
-            if (configData.Options.debug) DoLog(":EXIT BLOCKED");
+            _DoLog($"DAMAGE BLOCKED for {stype} attacking {ttype}, majority damage type {majority}");
+            if (configData.Options.debug) _DoLog(":EXIT BLOCKED");
             return false;
         }
         #endregion
@@ -796,13 +795,13 @@ namespace Namespace
         {
             if (source == null || target == null)
             {
-                if (configData.Options.debug) DoLog("Null source or target object");
+                if (configData.Options.debug) _DoLog("Null source or target object");
                 stype = "";
                 ttype = "";
                 return false;
             }
 
-            if (configData.Options.debug) DoLog("Getting source type");
+            if (configData.Options.debug) _DoLog("Getting source type");
             if (source.ShortPrefabName == "rocket_mlrs")
             {
                 stype = "MLRS";
@@ -816,21 +815,21 @@ namespace Namespace
                 stype = source?.GetType().Name;
             }
 
-            if (configData.Options.debug) DoLog("Getting target type");
+            if (configData.Options.debug) _DoLog("Getting target type");
             ttype = target?.GetType().Name;
             if (string.IsNullOrEmpty(stype) || string.IsNullOrEmpty(ttype))
             {
-                if (configData.Options.debug) DoLog("Type detection failure.  Bailing out.");
+                if (configData.Options.debug) _DoLog("Type detection failure.  Bailing out.");
                 stype = "";
                 ttype = "";
                 return false;
             }
-            if (configData.Options.debug) DoLog($"attacker type: {stype}, victim type: {ttype}");
+            if (configData.Options.debug) _DoLog($"attacker type: {stype}, victim type: {ttype}");
 
             // Special case for preventing codelock hacking
             if (stype == "CodeLock" && ttype == "BasePlayer")
             {
-                DoLog("Allowing codelock damage");
+                _DoLog("Allowing codelock damage");
                 return true;
             }
 
@@ -845,19 +844,19 @@ namespace Namespace
                 isBuilding = true;
                 if (!PlayerOwnsItem(source as BasePlayer, target))
                 {
-                    DoLog("No building block access.");
+                    _DoLog("No building block access.");
                     hasBP = false;
                 }
                 else
                 {
-                    DoLog("Player has privilege to block or is not blocked by TC.");
+                    _DoLog("Player has privilege to block or is not blocked by TC.");
                 }
             }
             else if (stype == "BasePlayer" && ttype == "BuildingPrivlidge")
             {
                 if (!PlayerOwnsTC(source as BasePlayer, target as BuildingPrivlidge))
                 {
-                    DoLog("No building privilege.");
+                    _DoLog("No building privilege.");
                     hasBP = false;
                 }
                 else if (configData.Options.protectedDays > 0 && target.OwnerID > 0)
@@ -876,18 +875,18 @@ namespace Namespace
                         float days = Math.Abs((now - lc) / 86400);
                         if (days > configData.Options.protectedDays)
                         {
-                            DoLog($"Allowing TC damage for offline owner beyond {configData.Options.protectedDays} days");
+                            _DoLog($"Allowing TC damage for offline owner beyond {configData.Options.protectedDays} days");
                             return true;
                         }
                         else
                         {
-                            DoLog($"Owner was last connected {days} days ago and is still protected...");
+                            _DoLog($"Owner was last connected {days} days ago and is still protected...");
                         }
                     }
                 }
                 else
                 {
-                    DoLog("Player has building privilege or is not blocked.");
+                    _DoLog("Player has building privilege or is not blocked.");
                 }
             }
             else if (stype == "BaseHelicopter" && (ttype == "BuildingBlock" || ttype == "Door" || ttype == "wall.window" || ttype == "BuildingPrivlidge"))
@@ -944,7 +943,7 @@ namespace Namespace
             switch (zone)
             {
                 case "default":
-                    DoLog("Default ruleset query");
+                    _DoLog("Default ruleset query");
                     mquery = "SELECT DISTINCT name, zone, damage, enabled FROM ngpve_rulesets WHERE zone='0' OR zone='default'";
                     break;
                 default:
@@ -973,10 +972,10 @@ namespace Namespace
             {
                 using (SqliteDataReader readMe = findIt.ExecuteReader())
                 {
-                    DoLog("QUERY START");
+                    _DoLog("QUERY START");
                     while (readMe.Read())
                     {
-                        DoLog("READING...");
+                        _DoLog("READING...");
                         if (foundmatch) break; // Breaking due to match found in previously checked ruleset
                         bool enabled = readMe.GetBoolean(3);
                         rulesetname = readMe.GetString(0);
@@ -984,7 +983,7 @@ namespace Namespace
 
                         if (!enabled)
                         {
-                            DoLog($"Skipping ruleset {rulesetname}, which is disabled");
+                            _DoLog($"Skipping ruleset {rulesetname}, which is disabled");
                             continue;
                         }
 
@@ -997,12 +996,12 @@ namespace Namespace
                         // First: If we are in a matching zone, use it
                         if (zone == rulesetzone)
                         {
-                            DoLog($"Zone match for ruleset {rulesetname}, zone {rulesetzone}");
+                            _DoLog($"Zone match for ruleset {rulesetname}, zone {rulesetzone}");
                         }
                         // Second: If we are in the default zone, and this rulesetzone is not, skip it
                         if (zone == "default" && rulesetzone != "default" && rulesetzone != "" && rulesetzone != "0")
                         {
-                            DoLog($"Skipping ruleset {rulesetname} due to zone mismatch with current zone, {zone}");
+                            _DoLog($"Skipping ruleset {rulesetname} due to zone mismatch with current zone, {zone}");
                             continue;
                         }
                         // Third: rulesetzone == "lookup" but zonemaps does not contain this zone, skip it
@@ -1010,18 +1009,18 @@ namespace Namespace
                         {
                             if (!ngpvezonemaps[rulesetname].map.Contains(zone))
                             {
-                                DoLog($"Skipping ruleset {rulesetname} due to zone lookup mismatch with current zone, {zone}");
+                                _DoLog($"Skipping ruleset {rulesetname} due to zone lookup mismatch with current zone, {zone}");
                                 continue;
                             }
-                            DoLog($"Lookup zone {zone}");
+                            _DoLog($"Lookup zone {zone}");
                         }
 
-                        DoLog($"Checking ruleset {rulesetname} for {src} attacking {tgt}.");
+                        _DoLog($"Checking ruleset {rulesetname} for {src} attacking {tgt}.");
                         //DoLog($"SELECT enabled, src_exclude, tgt_exclude FROM ngpve_rulesets WHERE name='{rulesetname}' AND enabled='1' AND exception='{src}_{tgt}'");
 
                         if (src != null && tgt != null)
                         {
-                            DoLog($"Found {stype} attacking {ttype}.  Checking ruleset {rulesetname}, zone {rulesetzone}");
+                            _DoLog($"Found {stype} attacking {ttype}.  Checking ruleset {rulesetname}, zone {rulesetzone}");
                             using (SqliteCommand rq = new SqliteCommand($"SELECT src_exclude, tgt_exclude FROM ngpve_rulesets WHERE name='{rulesetname}' AND exception='{src}_{tgt}'", sqlConnection))
                             {
                                 using (SqliteDataReader entry = rq.ExecuteReader())
@@ -1029,7 +1028,7 @@ namespace Namespace
                                     while (entry.Read())
                                     {
                                         // source and target exist - verify that they are not excluded
-                                        DoLog($"Found exception match for {stype} attacking {ttype}");
+                                        _DoLog($"Found exception match for {stype} attacking {ttype}");
 
                                         string foundsrc = entry.GetValue(0).ToString();
                                         string foundtgt = entry.GetValue(1).ToString();
@@ -1039,19 +1038,19 @@ namespace Namespace
 
                                         if (foundsrc.Contains(stype))
                                         {
-                                            DoLog($"Exclusion for {stype}");
+                                            _DoLog($"Exclusion for {stype}");
                                             foundexclusion = true;
                                             break;
                                         }
                                         else if (foundtgt.Contains(ttype))
                                         {
-                                            DoLog($"Exclusion for {ttype}");
+                                            _DoLog($"Exclusion for {ttype}");
                                             foundexclusion = true;
                                             break;
                                         }
                                         else
                                         {
-                                            DoLog($"No exclusions for {stype} to {ttype}");
+                                            _DoLog($"No exclusions for {stype} to {ttype}");
                                             foundexclusion = false;
                                         }
                                     }
@@ -1061,7 +1060,7 @@ namespace Namespace
                             // Special override to HonorBuildingPrivilege since we are NOT seeing a XXX_building exception and damage is true.
                             if (!foundexception && damage && isBuilding)
                             {
-                                DoLog($"Setting damage allow for building based on ruleset {rulesetname} damage value {damage}");
+                                _DoLog($"Setting damage allow for building based on ruleset {rulesetname} damage value {damage}");
                                 foundmatch = true;
                                 hasBP = true;
                             }
@@ -1082,30 +1081,30 @@ namespace Namespace
             }
             if (hasBP && isBuilding)
             {
-                DoLog("Player has building privilege and is attacking a BuildingBlock/door/window, heli is attacking a building owned by a targeted player, or damage is enabled for buildings with no exceptions.");
+                _DoLog("Player has building privilege and is attacking a BuildingBlock/door/window, heli is attacking a building owned by a targeted player, or damage is enabled for buildings with no exceptions.");
                 return true;
             }
             else if (!hasBP && isBuilding)
             {
-                DoLog("Player does NOT have building privilege and is attacking a BuildingBlock.  Or, player owner is not being targeted by the heli.");
+                _DoLog("Player does NOT have building privilege and is attacking a BuildingBlock.  Or, player owner is not being targeted by the heli.");
                 return false;
             }
 
             if (foundmatch)
             {
-                DoLog($"Sanity check foundexception: {foundexception}, foundexclusion: {foundexclusion}");
+                _DoLog($"Sanity check foundexception: {foundexception}, foundexclusion: {foundexclusion}");
                 if (foundexception && !foundexclusion)
                 {
-                    DoLog($"Ruleset '{rulesetname}' exception: Setting damage to {!damage}");
+                    _DoLog($"Ruleset '{rulesetname}' exception: Setting damage to {!damage}");
                     return !damage;
                 }
             }
             else
             {
-                DoLog($"No Ruleset match or exclusions: Setting damage to {damage}");
+                _DoLog($"No Ruleset match or exclusions: Setting damage to {damage}");
                 return damage;
             }
-            DoLog("NO RULESET MATCH!");
+            _DoLog("NO RULESET MATCH!");
             return damage;
         }
 
@@ -1145,7 +1144,7 @@ namespace Namespace
             if (month == 12) year++;
 
             IEnumerable<DateTime> thursdays = AllDatesInMonth(year, month).Where(i => i.DayOfWeek == DayOfWeek.Thursday);
-            DoLog($"Next force wipe day will be {thursdays.First().ToShortDateString()}");
+            _DoLog($"Next force wipe day will be {thursdays.First().ToShortDateString()}");
 
             configData.Options.purgeStart = thursdays.First().Subtract(TimeSpan.FromDays(configData.Options.autoCalcPurgeDays)).ToShortDateString() + " 0:00";
             configData.Options.purgeEnd = thursdays.First().ToShortDateString() + " 0:00";
@@ -1187,14 +1186,14 @@ namespace Namespace
                         enabled = true;
                         string end = string.IsNullOrEmpty(configData.Options.purgeEndMessage) ? Lang("purgeinactive") : configData.Options.purgeEndMessage;
                         MessageToAll(end, "");
-                        DoLog(Lang("purgeinactive"));
+                        _DoLog(Lang("purgeinactive"));
                         BroadcastReturn("EnableMe");
                         break;
                     default:
                         enabled = false;
                         string start = string.IsNullOrEmpty(configData.Options.purgeStartMessage) ? Lang("purgeactive") : configData.Options.purgeStartMessage;
                         MessageToAll(start, "");
-                        DoLog(Lang("purgeactive"));
+                        _DoLog(Lang("purgeactive"));
                         BroadcastReturn("DisableMe");
                         break;
                 }
@@ -1213,7 +1212,7 @@ namespace Namespace
                     }
                     catch
                     {
-                        DoLog("TOD_Sky failure...");
+                        _DoLog("TOD_Sky failure...");
                         refresh = true;
                     }
                     break;
@@ -1259,43 +1258,43 @@ namespace Namespace
                 {
                     //invert = inPurge || scheduleInfo.Value.invert;
                     invert = scheduleInfo.Value.invert;
-                    DoLog("Schedule string was parsed correctly...");
+                    _DoLog("Schedule string was parsed correctly...");
                     int i = 0;
                     foreach (string x in parsed.day)
                     {
-                        DoLog($"Schedule day == {x} {parsed.dayName[i]} {parsed.starthour} to {parsed.endhour}");
+                        _DoLog($"Schedule day == {x} {parsed.dayName[i]} {parsed.starthour} to {parsed.endhour}");
                         i++;
                         if (ts.Days.ToString() == x)
                         {
-                            DoLog($"Day matched.  Comparing {ts.Hours}:{ts.Minutes.ToString().PadLeft(2, '0')} to start time {parsed.starthour}:{parsed.startminute} and end time {parsed.endhour}:{parsed.endminute}");
+                            _DoLog($"Day matched.  Comparing {ts.Hours}:{ts.Minutes.ToString().PadLeft(2, '0')} to start time {parsed.starthour}:{parsed.startminute} and end time {parsed.endhour}:{parsed.endminute}");
                             if (ts.Hours >= Convert.ToInt32(parsed.starthour) && ts.Hours <= Convert.ToInt32(parsed.endhour))
                             {
                                 // Hours matched for activating ruleset, check minutes
-                                DoLog($"Hours matched for ruleset {scheduleInfo.Key}", 1);
+                                _DoLog($"Hours matched for ruleset {scheduleInfo.Key}", 1);
                                 if (ts.Hours == Convert.ToInt32(parsed.starthour) && ts.Minutes >= Convert.ToInt32(parsed.startminute))
                                 {
-                                    DoLog("Matched START hour and minute.", 2);
+                                    _DoLog("Matched START hour and minute.", 2);
                                     enables[scheduleInfo.Value.name] = !invert;
                                 }
                                 else if (ts.Hours == Convert.ToInt32(parsed.endhour) && ts.Minutes <= Convert.ToInt32(parsed.endminute))
                                 {
-                                    DoLog("Matched END hour and minute.", 2);
+                                    _DoLog("Matched END hour and minute.", 2);
                                     enables[scheduleInfo.Value.name] = !invert;
                                 }
                                 else if (ts.Hours > Convert.ToInt32(parsed.starthour) && ts.Hours < Convert.ToInt32(parsed.endhour))
                                 {
-                                    DoLog("Between start and end hours.", 2);
+                                    _DoLog("Between start and end hours.", 2);
                                     enables[scheduleInfo.Value.name] = !invert;
                                 }
                                 else
                                 {
-                                    DoLog("Minute mismatch for START OR END.", 2);
+                                    _DoLog("Minute mismatch for START OR END.", 2);
                                     enables[scheduleInfo.Value.name] = invert;
                                 }
                             }
                             else
                             {
-                                DoLog($"Hours NOT matched for ruleset {scheduleInfo.Key}", 1);
+                                _DoLog($"Hours NOT matched for ruleset {scheduleInfo.Key}", 1);
                                 enables[scheduleInfo.Value.name] = invert;
                             }
                         }
@@ -1310,11 +1309,11 @@ namespace Namespace
 
             foreach (KeyValuePair<string, bool> doenable in enables)
             {
-                DoLog($"Enable = {doenable.Key}: {doenable.Value}, invert = {ngpveinvert[doenable.Key]}");
+                _DoLog($"Enable = {doenable.Key}: {doenable.Value}, invert = {ngpveinvert[doenable.Key]}");
                 switch (doenable.Value)// & !invert)
                 {
                     case false:
-                        DoLog($"Disabling ruleset {doenable.Key} (inverted={ngpveinvert[doenable.Key]})", 3);
+                        _DoLog($"Disabling ruleset {doenable.Key} (inverted={ngpveinvert[doenable.Key]})", 3);
                         using (SqliteConnection c = new SqliteConnection(connStr))
                         {
                             c.Open();
@@ -1336,7 +1335,7 @@ namespace Namespace
                         }
                         break;
                     case true:
-                        DoLog($"Enabling ruleset {doenable.Key} (inverted={ngpveinvert[doenable.Key]})", 3);
+                        _DoLog($"Enabling ruleset {doenable.Key} (inverted={ngpveinvert[doenable.Key]})", 3);
                         using (SqliteConnection c = new SqliteConnection(connStr))
                         {
                             c.Open();
@@ -1370,7 +1369,7 @@ namespace Namespace
             {
                 c.Open();
                 string query = $"SELECT DISTINCT schedule FROM ngpve_rulesets WHERE name='{rs}' AND schedule != '0'";
-                DoLog(query);
+                _DoLog(query);
                 using (SqliteCommand use = new SqliteCommand(query, c))
                 {
                     using (SqliteDataReader schedule = use.ExecuteReader())
@@ -1468,7 +1467,7 @@ namespace Namespace
 
         private bool ParseSchedule(string rs, string dbschedule, out NextGenPVESchedule parsed)
         {
-            DoLog($"ParseSchedule called on string {dbschedule}");
+            _DoLog($"ParseSchedule called on string {dbschedule}");
             parsed = new NextGenPVESchedule();
 
             if (string.IsNullOrEmpty(dbschedule) || dbschedule == "0")
@@ -1540,7 +1539,7 @@ namespace Namespace
             return true;
         }
 
-        private void DoLog(string message, int indent = 0)
+        private void _DoLog(string message, int indent = 0)
         {
             if (!enabled) return;
             if (message.Contains("Turret")) return; // Log volume FIXME
@@ -1658,7 +1657,7 @@ namespace Namespace
         #endregion
 
         #region config
-        private void LoadConfigVariables()
+        private void LoadConfig()
         {
             if (config.Exists())
             {
@@ -1675,7 +1674,7 @@ namespace Namespace
 
         public void LoadDefaultConfig()
         {
-            DoLog("Creating new config file.");
+            _DoLog("Creating new config file.");
             ConfigData config = new ConfigData
             {
                 Options = new Options()
@@ -1758,7 +1757,7 @@ namespace Namespace
 
         protected void LoadDefaultFlags()
         {
-            DoLog("Creating new config defaults.");
+            _DoLog("Creating new config defaults.");
             configData.Options.NPCAutoTurretTargetsPlayers = true;
             configData.Options.NPCAutoTurretTargetsNPCs = true;
             configData.Options.AutoTurretTargetsPlayers = false;
@@ -1781,13 +1780,13 @@ namespace Namespace
         {
             if (set)
             {
-                if (configData.Options.debug) DoLog($"Setting isopen for {uid}");
+                if (configData.Options.debug) _DoLog($"Setting isopen for {uid}");
 
                 if (!isopen.Contains(uid)) isopen.Add(uid);
                 return;
             }
 
-            if (configData.Options.debug) DoLog($"Clearing isopen for {uid}");
+            if (configData.Options.debug) _DoLog($"Clearing isopen for {uid}");
 
             isopen.Remove(uid);
         }
@@ -2503,7 +2502,7 @@ namespace Namespace
                 q = $"SELECT DISTINCT name, type FROM ngpve_entities WHERE name LIKE '%{cat}%' ORDER BY type";
             }
 
-            if (configData.Options.debug) DoLog($"QUERY IS {q}, COLLECTION IS {cat}, SEARCH IS {search}");
+            if (configData.Options.debug) _DoLog($"QUERY IS {q}, COLLECTION IS {cat}, SEARCH IS {search}");
 
             using (SqliteConnection c = new SqliteConnection(connStr))
             {
@@ -3332,10 +3331,10 @@ namespace Namespace
         {
             if (!configData.Options.HonorBuildingPrivilege)
             {
-                DoLog("HonorBuildingPrivilege set to false.  Skipping owner checks...");
+                _DoLog("HonorBuildingPrivilege set to false.  Skipping owner checks...");
                 return true;
             }
-            DoLog($"Does player {player.displayName} own {privilege.ShortPrefabName}?");
+            _DoLog($"Does player {player.displayName} own {privilege.ShortPrefabName}?");
 
             BuildingManager.Building building = privilege.GetBuilding();
             if (building != null)
@@ -3345,12 +3344,12 @@ namespace Namespace
                 {
                     if (configData.Options.UnprotectedBuildingDamage)
                     {
-                        DoLog($"Null privileges.  UnprotectedBuildingDamage true.  Player effectively owns {privilege.ShortPrefabName}");
+                        _DoLog($"Null privileges.  UnprotectedBuildingDamage true.  Player effectively owns {privilege.ShortPrefabName}");
                         return true;
                     }
                     else
                     {
-                        DoLog($"Null privileges.  UnprotectedBuildingDamage false.  Player effectively does not own {privilege.ShortPrefabName}");
+                        _DoLog($"Null privileges.  UnprotectedBuildingDamage false.  Player effectively does not own {privilege.ShortPrefabName}");
                         return false;
                     }
                 }
@@ -3359,17 +3358,17 @@ namespace Namespace
                 {
                     if (privilege.OwnerID == player.userID)
                     {
-                        DoLog($"Player owns BuildingBlock", 2);
+                        _DoLog($"Player owns BuildingBlock", 2);
                         return true;
                     }
                     else if (player.userID == auth)
                     {
-                        DoLog($"Player has privilege on BuildingBlock", 2);
+                        _DoLog($"Player has privilege on BuildingBlock", 2);
                         return true;
                     }
                     else if (Utils.IsFriend(auth, privilege.OwnerID))
                     {
-                        DoLog($"Player is friends with owner of BuildingBlock", 2);
+                        _DoLog($"Player is friends with owner of BuildingBlock", 2);
                         return true;
                     }
                 }
@@ -3380,7 +3379,7 @@ namespace Namespace
 
         private bool PlayerOwnsItem(BasePlayer player, BaseEntity entity)
         {
-            DoLog($"Does player {player.displayName} own {entity.ShortPrefabName}?");
+            _DoLog($"Does player {player.displayName} own {entity.ShortPrefabName}?");
             if (entity is BuildingBlock)
             {
                 if (configData.Options.TwigDamage)
@@ -3390,7 +3389,7 @@ namespace Namespace
                         BuildingBlock block = entity as BuildingBlock;
                         if (block.grade == BuildingGrade.Enum.Twigs)
                         {
-                            DoLog("Allowing twig destruction...");
+                            _DoLog("Allowing twig destruction...");
                             return true;
                         }
                     }
@@ -3413,12 +3412,12 @@ namespace Namespace
                         float days = Math.Abs((now - lc) / 86400);
                         if (days > configData.Options.protectedDays)
                         {
-                            DoLog($"Allowing damage for offline owner beyond {configData.Options.protectedDays} days");
+                            _DoLog($"Allowing damage for offline owner beyond {configData.Options.protectedDays} days");
                             return true;
                         }
                         else
                         {
-                            DoLog($"Owner was last connected {days} days ago and is still protected...");
+                            _DoLog($"Owner was last connected {days} days ago and is still protected...");
                         }
                     }
                 }
@@ -3429,7 +3428,7 @@ namespace Namespace
 
                 if (building != null)
                 {
-                    DoLog($"Checking building privilege for {entity.ShortPrefabName}");
+                    _DoLog($"Checking building privilege for {entity.ShortPrefabName}");
                     BuildingPrivlidge privs = building.GetDominatingBuildingPrivilege();
                     if (privs == null)
                     {
@@ -3439,17 +3438,17 @@ namespace Namespace
                     {
                         if (entity.OwnerID == player.userID)
                         {
-                            DoLog($"Player owns BuildingBlock", 2);
+                            _DoLog($"Player owns BuildingBlock", 2);
                             return true;
                         }
                         else if (player.userID == auth)
                         {
-                            DoLog($"Player has privilege on BuildingBlock", 2);
+                            _DoLog($"Player has privilege on BuildingBlock", 2);
                             return true;
                         }
                         else if (Utils.IsFriend(auth, entity.OwnerID))
                         {
-                            DoLog($"Player is friends with owner of BuildingBlock", 2);
+                            _DoLog($"Player is friends with owner of BuildingBlock", 2);
                             return true;
                         }
                     }
@@ -3467,41 +3466,41 @@ namespace Namespace
                     {
                         if (player.userID == auth)
                         {
-                            DoLog($"Player has privilege on {entity.ShortPrefabName}", 2);
+                            _DoLog($"Player has privilege on {entity.ShortPrefabName}", 2);
                             hasbp = true;
                         }
                         else if (Utils.IsFriend(auth, entity.OwnerID))
                         {
-                            DoLog($"Player is friends with owner of {entity.ShortPrefabName}", 2);
+                            _DoLog($"Player is friends with owner of {entity.ShortPrefabName}", 2);
                             hasbp = true;
                         }
                         else
                         {
-                            DoLog($"Player may own {entity.ShortPrefabName} but is blocked by building privilege.", 2);
+                            _DoLog($"Player may own {entity.ShortPrefabName} but is blocked by building privilege.", 2);
                         }
                     }
                 }
 
                 if (Utils.IsFriend(player.userID, entity.OwnerID) && hasbp)
                 {
-                    DoLog($"Player is friends with owner of entity", 2);
+                    _DoLog($"Player is friends with owner of entity", 2);
                     return true;
                 }
                 else if (entity.OwnerID == player.userID && hasbp)
                 {
-                    DoLog($"Player owns item", 2);
+                    _DoLog($"Player owns item", 2);
                     return true;
                 }
                 else if (Utils.IsFriend(player.userID, entity.OwnerID) && !hasbp)
                 {
-                    DoLog($"Player is friends with owner of entity but is blocked by building privilege", 2);
+                    _DoLog($"Player is friends with owner of entity but is blocked by building privilege", 2);
                 }
                 else if (entity.OwnerID == player.userID && !hasbp)
                 {
-                    DoLog($"Player owns item but is blocked by building privilege", 2);
+                    _DoLog($"Player owns item but is blocked by building privilege", 2);
                 }
             }
-            DoLog("Player does not own or have access to this entity");
+            _DoLog("Player does not own or have access to this entity");
             return false;
         }
 
@@ -3588,7 +3587,7 @@ namespace Namespace
         // Default entity categories and types to consider
         private void LoadDefaultEntities()
         {
-            DoLog("Trying to recreate entities data...");
+            _DoLog("Trying to recreate entities data...");
             using (SqliteConnection c = new SqliteConnection(connStr))
             {
                 c.Open();
@@ -3688,7 +3687,7 @@ namespace Namespace
         // Default rules which can be applied
         private void LoadDefaultRules()
         {
-            DoLog("Trying to recreate rules data...");
+            _DoLog("Trying to recreate rules data...");
             using (SqliteConnection c = new SqliteConnection(connStr))
             {
                 c.Open();
@@ -3774,7 +3773,7 @@ namespace Namespace
 
         private void LoadDefaultRuleset(bool drop = true)
         {
-            DoLog("Trying to recreate ruleset data...");
+            _DoLog("Trying to recreate ruleset data...");
 
             if (drop)
             {

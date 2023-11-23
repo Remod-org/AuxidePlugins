@@ -62,6 +62,7 @@ public class HTeleport : RustScript
     public class ConfigData
     {
         public bool debug;
+        public bool useAlternateTp;
         public float countdownSeconds;
         public HomeData server;
     }
@@ -248,25 +249,44 @@ public class HTeleport : RustScript
             {
                 Teleport(ptp.Value.player, ptp.Value.target);
                 playerTP.Remove(ptp.Key);
+                ptp.Value.timer.Dispose();
                 break;
             }
         }
     }
+
     private void Teleport(BasePlayer player, Vector3 target)
     {
         if (configData.debug) Utils.DoLog($"Teleporting {player.displayName} to {target}");
+
+        if (configData.useAlternateTp)
+        {
+            try
+            {
+                player.EnsureDismounted();
+                player.SetParent(null, true, true);
+                player.SetServerFall(true);
+                player.MovePosition(target);
+                player.ClientRPCPlayer(null, player, "ForcePositionTo", target);
+            }
+            finally
+            {
+                player.SetServerFall(false);
+            }
+            return;
+        }
+
         if (player.net?.connection != null)
         {
             player.SetPlayerFlag(BasePlayer.PlayerFlags.ReceivingSnapshot, true);
         }
-
         player.SetParent(null, true, true);
         player.EnsureDismounted();
         player.Teleport(target);
         player.UpdateNetworkGroup();
         player.StartSleeping();
         player.SendNetworkUpdateImmediate(false);
-        if (configData.debug) Utils.DoLog("Done!");
+        //if (configData.debug) Utils.DoLog("Done!");
         if (player.net?.connection != null) player.ClientRPCPlayer(null, player, "StartLoading");
         //player.EndSleeping();
     }
