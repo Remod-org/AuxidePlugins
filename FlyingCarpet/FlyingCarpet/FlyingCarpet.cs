@@ -68,7 +68,7 @@ internal class FlyingCarpet : RustScript
     {
         Instance = this;
 
-        LoadConfigVariables();
+        LoadConfig();
         layerMask = (1 << 29);
         layerMask |= (1 << 18);
         layerMask = ~layerMask;
@@ -197,7 +197,7 @@ internal class FlyingCarpet : RustScript
         SaveConfig(config);
     }
 
-    private void LoadConfigVariables()
+    private void LoadConfig()
     {
         configData = config.ReadObject<ConfigData>();
         configData.Version = Version;
@@ -272,7 +272,6 @@ internal class FlyingCarpet : RustScript
         }
     }
 
-    //[Command("fc"), Permission("flyingcarpet.use")]
     private void cmdCarpetBuild(BasePlayer player, string command, string[] args)
     {
         bool vip = false;
@@ -889,14 +888,17 @@ internal class FlyingCarpet : RustScript
     public object OnPlayerInput(BasePlayer player, InputState input)
     {
         if (player == null || input == null) return null;
-        //if (!player.isMounted) return null;
+        if (!player.isMounted) return null;
 
-        CarpetEntity activecarpet = player.GetMounted().GetComponentInParent<CarpetEntity>();
-        if (activecarpet == null) return null;
-        if (player.GetMounted() != activecarpet.entity) return null;
-        if (input != null)
+        if (input.current.buttons > 0)
         {
-            activecarpet.CarpetInput(input, player);
+            CarpetEntity activecarpet = player.GetMounted().GetComponentInParent<CarpetEntity>();
+            if (activecarpet == null) return null;
+            if (player.GetMounted() != activecarpet.entity) return null;
+            if (input != null)
+            {
+                activecarpet.CarpetInput(input, player);
+            }
         }
         return null;
     }

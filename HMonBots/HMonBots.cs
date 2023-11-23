@@ -914,14 +914,15 @@ internal class HMonBots : RustScript
     public void OnEntityDeath(BaseCombatEntity entity, HitInfo hitinfo)
     {
         if (entity == null) return;
+        if (hitinfo == null) return;
         HumanNPC humannpc = entity as HumanNPC;
-        MonBotPlayer npc = humannpc.GetComponent<MonBotPlayer>();
+        MonBotPlayer npc = humannpc?.GetComponent<MonBotPlayer>();
         if (npc == null) return;
         DoLog("OnEntityDeath: Found MonBot player");
 
-        hpcacheid.Remove(humannpc.net.ID.Value);
+        hpcacheid?.Remove(humannpc.net.ID.Value);
 
-        if (npc.info.dropWeapon)
+        if (npc?.info != null && npc.info.dropWeapon)
         {
             DoLog("OnEntityDeath: Attempting to drop weapon");
             if (npc.activeItem != null)
@@ -2327,17 +2328,12 @@ internal class HMonBots : RustScript
 
     private void FindMonuments()
     {
-        Vector3 extents = Vector3.zero;
         foreach (MonumentInfo monument in UnityEngine.Object.FindObjectsOfType<MonumentInfo>())
         {
-            if (monument.name.Contains("power_sub"))
-            {
-                continue;
-            }
+            if (monument.name.Contains("power_sub") || monument.name.Contains("derwater")) continue;
 
             float realWidth = 0f;
-            string name = null;
-
+            string name;
             if (monument.name == "OilrigAI")
             {
                 name = "Small Oilrig";
@@ -2348,11 +2344,16 @@ internal class HMonBots : RustScript
                 name = "Large Oilrig";
                 realWidth = 200f;
             }
+            else if (monument.name == "assets/bundled/prefabs/autospawn/monument/medium/radtown_small_3.prefab")
+            {
+                name = "Sewer Branch";
+                realWidth = 100;
+            }
             else
             {
-                //name = Regex.Match(monument.name, @"\w{6}\/(.+\/)(.+)\.(.+)").Groups[2].Value.Replace("_", " ").Replace(" 1", "").Titleize() + " 0";
-                name = Regex.Match(monument.name, @"\w{6}\/(.+\/)(.+)\.(.+)").Groups[2].Value.Replace("_", " ").Replace(" 1", "").ToUpper() + " 0";
+                name = Regex.Match(monument.name, @"\w{6}\/(.+\/)(.+)\.(.+)").Groups[2].Value.Replace("_", " ").Replace(" 1", "").Titleize() + " 0";
             }
+            if (name.Trim().Length == 0 || name.Trim().Length == 1) continue;
             if (monPos.ContainsKey(name))
             {
                 if (monPos[name] == monument.transform.position) continue;
@@ -2368,31 +2369,18 @@ internal class HMonBots : RustScript
                 name = newname;
             }
 
-            if (cavePos.ContainsKey(name))
-            {
-                name += RandomString();
-            }
-
-            extents = monument.Bounds.extents;
+            Vector3 extents = monument.Bounds.extents;
             if (realWidth > 0f)
             {
                 extents.z = realWidth;
             }
-
-            if (monument.name.Contains("cave"))
+            if (extents.z < 1)
             {
-                cavePos.Add(name, monument.transform.position);
+                extents.z = 50f;
             }
-            else
-            {
-                if (extents.z < 1)
-                {
-                    extents.z = 50f;
-                }
-                monPos.Add(name.Trim(), monument.transform.position);
-                monSize.Add(name.Trim(), extents);
-                //DoLog($"Found monument {name} at {monument.transform.position.ToString()}");
-            }
+            monPos.Add(name.Trim(), monument.transform.position);
+            monSize.Add(name.Trim(), extents);
+            //DoLog($"Found monument {name} at {monument.transform.position.ToString()}");
         }
     }
     #endregion Helpers
