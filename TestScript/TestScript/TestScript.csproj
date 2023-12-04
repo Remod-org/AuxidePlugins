@@ -193,20 +193,12 @@
       <HintPath>H:\staging\RustDedicated_Data\Managed\Mono.Security.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Mono.WebBrowser">
-      <HintPath>H:\staging\RustDedicated_Data\Managed\Mono.WebBrowser.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="MP3Sharp">
       <HintPath>H:\staging\RustDedicated_Data\Managed\MP3Sharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>H:\staging\RustDedicated_Data\Managed\Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Novell.Directory.Ldap">
-      <HintPath>H:\staging\RustDedicated_Data\Managed\Novell.Directory.Ldap.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Rust.Data">
@@ -452,9 +444,11 @@
       <HintPath>H:\staging\RustDedicated_Data\Managed\UnityEngine.TerrainPhysicsModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.TextCoreModule">
-      <HintPath>H:\staging\RustDedicated_Data\Managed\UnityEngine.TextCoreModule.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="UnityEngine.TextCoreFontEngineModule">
+      <HintPath>H:\staging\RustDedicated_Data\Managed\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextCoreTextEngineModule">
+      <HintPath>H:\staging\RustDedicated_Data\Managed\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
       <HintPath>H:\staging\RustDedicated_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>

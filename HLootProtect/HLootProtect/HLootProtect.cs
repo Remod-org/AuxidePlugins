@@ -5,7 +5,7 @@ using System.Globalization;
 using UnityEngine;
 
 [Info("HLootProtect", "RFC1920", "1.0.2")]
-[Description("Basic loot protection for Auxide");
+[Description("Basic loot protection for Auxide")]
 public class HLootProtect : RustScript
 {
     private static ConfigData configData;
@@ -28,7 +28,7 @@ public class HLootProtect : RustScript
     public class Share
     {
         public string name;
-        public uint netid;
+        public ulong netid;
         public ulong sharewith;
     }
 
@@ -213,7 +213,7 @@ public class HLootProtect : RustScript
                         {
                             if (ent.OwnerID != player.userID && !Utils.IsFriend(player.userID, ent.OwnerID)) return;
                             string ename = ent.ShortPrefabName;
-                            sharing[player.userID].Add(new Share { netid = ent.net.ID, name = ename, sharewith = 0 });
+                            sharing[player.userID].Add(new Share { netid = ent.net.ID.Value, name = ename, sharewith = 0 });
                             SaveData();
                             //Utils.SendReply(player, $"Shared {ename} with all");
                             Message(player, "shared", ename, Lang("all"));
@@ -238,7 +238,7 @@ public class HLootProtect : RustScript
                                     message += $"{ename}({ent.net.ID}):\n";
                                     foreach (Share x in sharing[ent.OwnerID])
                                     {
-                                        if (x.netid != ent.net.ID) continue;
+                                        if (x.netid != ent.net.ID.Value) continue;
                                         if (x.sharewith == 0)
                                         {
                                             message += "\t" + "all" + "\n";
@@ -273,7 +273,7 @@ public class HLootProtect : RustScript
                             {
                                 if (ent.OwnerID != player.userID && !Utils.IsFriend(player.userID, ent.OwnerID)) return;
                                 string ename = ent.ShortPrefabName;
-                                sharing[player.userID].Add(new Share { netid = ent.net.ID, name = ename, sharewith = 1 });
+                                sharing[player.userID].Add(new Share { netid = ent.net.ID.Value, name = ename, sharewith = 1 });
                                 SaveData();
                                 //Utils.SendReply(player, $"sharedf {ename}");
                                 Message(player, "sharedf", ename);
@@ -293,11 +293,11 @@ public class HLootProtect : RustScript
                                 if (sharewith == null)
                                 {
                                     if (!configData.HonorRelationships) return;
-                                    sharing[player.userID].Add(new Share { netid = ent.net.ID, name = ename, sharewith = 1 });
+                                    sharing[player.userID].Add(new Share { netid = ent.net.ID.Value, name = ename, sharewith = 1 });
                                 }
                                 else
                                 {
-                                    sharing[player.userID].Add(new Share { netid = ent.net.ID, name = ename, sharewith = sharewith.userID });
+                                    sharing[player.userID].Add(new Share { netid = ent.net.ID.Value, name = ename, sharewith = sharewith.userID });
                                 }
                                 SaveData();
                                 //Utils.SendReply(player, $"Shared {ename} with {sharewith.displayName}");
@@ -319,13 +319,13 @@ public class HLootProtect : RustScript
                             List<Share> repl = new List<Share>();
                             foreach (Share x in sharing[player.userID])
                             {
-                                if (x.netid != ent.net.ID)
+                                if (x.netid != ent.net.ID.Value)
                                 {
                                     repl.Add(x);
                                 }
                                 else
                                 {
-                                    if (configData.debug) Utils.DoLog($"Removing {ent.net.ID} from sharing list...");
+                                    if (configData.debug) Utils.DoLog($"Removing {ent.net.ID.Value} from sharing list...");
                                 }
                             }
                             sharing[player.userID] = repl;
@@ -415,9 +415,9 @@ public class HLootProtect : RustScript
             if (configData.debug) Utils.DoLog($"Found entry for {target.OwnerID}");
             foreach (Share x in sharing[target.OwnerID])
             {
-                if (x.netid == target.net.ID && (x.sharewith == userid || x.sharewith == 0))
+                if (x.netid == target.net.ID.Value && (x.sharewith == userid || x.sharewith == 0))
                 {
-                    if (configData.debug) Utils.DoLog($"Found netid {target.net.ID} shared to {userid} or all.");
+                    if (configData.debug) Utils.DoLog($"Found netid {target.net.ID.Value} shared to {userid} or all.");
                     return true;
                 }
                 if (Utils.IsFriend(target.OwnerID, userid))

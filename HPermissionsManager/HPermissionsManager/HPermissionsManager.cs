@@ -703,7 +703,7 @@ public class HPermissionsManager : RustScript
     {
         if (arg.Player() != null && !HasPermission(arg.Player().UserIDString, permAllowed) & !IsAuth(arg.Player()))
         {
-            SendReply(arg.Player(), config.TitleColour + lang.GetMessage("title", this) + "</color>" + config.MessageColour + lang.GetMessage("NotAdmin", this) + "</color>");
+            Message(arg.Player(), config.TitleColour + lang.Get("title") + "</color>" + config.MessageColour + lang.Get("NotAdmin") + "</color>");
             return;
         }
 

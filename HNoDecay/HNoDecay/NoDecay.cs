@@ -608,7 +608,7 @@ public class HNoDecay : RustScript
 
         damageAmount = before * multiplier;
 
-        //DoLog($"Decay ({type}) before: {before} after: {damageAmount}");
+        DoLog($"Decay ({type}) before: {before} after: {damageAmount}");
         return damageAmount;
     }
 
