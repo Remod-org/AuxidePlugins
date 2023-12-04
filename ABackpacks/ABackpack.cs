@@ -37,11 +37,9 @@ public class ABackpacks : RustScript
     private Configuration _config;
     private StoredData _storedData;
     private int _wipeNumber;
-
     #endregion
 
     #region Hooks
-
     public override void Initialize()
     {
         LoadConfig();
@@ -284,7 +282,7 @@ public class ABackpacks : RustScript
         _backpackManager.TryEraseForPlayer(userId);
     }
 
-    private DroppedItemContainerExtension API_DropBackpack(BasePlayer player)
+    private DroppedItemContainer API_DropBackpack(BasePlayer player)
     {
         Backpack backpack = _backpackManager.GetBackpackIfExists(player.userID);
         if (backpack == null) return null;
@@ -306,11 +304,9 @@ public class ABackpacks : RustScript
     {
         return _backpackManager.GetBackpackIfExists(ownerId)?.GetItemQuantity(itemId) ?? 0;
     }
-
     #endregion
 
     #region Commands
-
     public void OpenBackpackChatCommand(BasePlayer player, string cmd, string[] args)
     {
         if (!player.CanInteract())
@@ -555,11 +551,9 @@ public class ABackpacks : RustScript
 
         Message(player, Lang("Toggled Backpack GUI", this, player.UserIDString));
     }
-
     #endregion
 
     #region Helper Methods
-
     private int DetermineWipeNumber()
     {
         string saveName = World.SaveFileName;
@@ -596,7 +590,7 @@ public class ABackpacks : RustScript
             if (player.displayName.Equals(nameOrID, StringComparison.InvariantCultureIgnoreCase))
                 return player;
 
-            if (player.displayName.ToLower().Contains(nameOrID.ToLower()))
+            if (player.displayName.IndexOf(nameOrID, StringComparison.CurrentCultureIgnoreCase) >= 0)
                 foundPlayers.Add(player);
         }
 
@@ -722,7 +716,6 @@ public class ABackpacks : RustScript
     #endregion
 
     #region Localization
-
     public override void LoadDefaultMessages()
     {
         lang.RegisterMessages(new Dictionary<string, string>
@@ -744,11 +737,9 @@ public class ABackpacks : RustScript
             ["Toggled Backpack GUI"] = "Toggled backpack GUI button.",
         }, Name);
     }
-
     #endregion
 
     #region Configuration
-
     public void LoadConfig()
     {
         //base.LoadConfig();
@@ -871,11 +862,9 @@ public class ABackpacks : RustScript
             return false;
         }
     }
-
     #endregion
 
     #region Stored Data
-
     private class StoredData
     {
         public static StoredData Load()
@@ -899,11 +888,9 @@ public class ABackpacks : RustScript
             _instance.data.WriteObject(_instance.Name, this);
         }
     }
-
     #endregion
 
     #region Backpack Manager
-
     private class BackpackManager
     {
         private const uint StartNetworkGroupId = 10000000;
@@ -1023,7 +1010,7 @@ public class ABackpacks : RustScript
             GetBackpackIfExists(userId)?.EraseContents();
         }
 
-        public DroppedItemContainerExtension Drop(ulong userId, Vector3 position)
+        public DroppedItemContainer Drop(ulong userId, Vector3 position)
         {
             return GetBackpackIfExists(userId)?.Drop(position);
         }
@@ -1108,11 +1095,9 @@ public class ABackpacks : RustScript
             _nextNetworkGroupId = StartNetworkGroupId;
         }
     }
-
     #endregion
 
     #region Backpack Networking
-
     private class BackpackNetworkController
     {
         public Network.Visibility.Group NetworkGroup { get; private set; }
@@ -1181,11 +1166,9 @@ public class ABackpacks : RustScript
             }
         }
     }
-
     #endregion
 
     #region Backpack
-
     private class NoRagdollCollision : FacepunchBehaviour
     {
         private Collider _collider;
@@ -1321,7 +1304,7 @@ public class ABackpacks : RustScript
             }
         }
 
-        public DroppedItemContainerExtension Drop(Vector3 position)
+        public DroppedItemContainer Drop(Vector3 position)
         {
             // Optimization: If no container and no stored data, don't bother with the rest of the logic.
             if (_storageContainer == null && ItemDataCollection.Count == 0)
@@ -1340,7 +1323,7 @@ public class ABackpacks : RustScript
             if (_itemContainer.itemList.Count == 0)
                 return null;
 
-            DroppedItemContainerExtension container = GameManager.server.CreateEntity(BackpackPrefab, position, Quaternion.identity) as DroppedItemContainerExtension;
+            DroppedItemContainer container = GameManager.server.CreateEntity(BackpackPrefab, position, Quaternion.identity) as DroppedItemContainer;
 
             container.gameObject.AddComponent<NoRagdollCollision>();
 
@@ -1494,7 +1477,7 @@ public class ABackpacks : RustScript
         {
             if (item.instanceData != null)
             {
-                if (item.instanceData.subEntity != 0)
+                if (item.instanceData.subEntity.Value != 0)
                 {
                     BaseEntity associatedEntity = BaseNetworkable.serverEntities.Find(item.instanceData.subEntity) as BaseEntity;
                     if (associatedEntity != null && associatedEntity.HasParent())
@@ -1511,7 +1494,7 @@ public class ABackpacks : RustScript
                 // If the item has an associated entity (e.g., photo, sign, cassette), the id will already have been saved.
                 // Forget about the entity when killing the item so that the entity will persist.
                 // When the backpack item is recreated later, this property will set from the data file so that the item can be reassociated.
-                item.instanceData.subEntity = 0;
+                item.instanceData.subEntity.Value = 0;
             }
 
             if (item.contents != null)
@@ -1581,7 +1564,7 @@ public class ABackpacks : RustScript
             if (storageEntity == null)
                 return null;
 
-            StorageContainerExtension containerEntity = storageEntity as StorageContainerExtension;
+            StorageContainer containerEntity = storageEntity as StorageContainer;
             if (containerEntity == null)
             {
                 UnityEngine.Object.Destroy(storageEntity);
@@ -1600,7 +1583,7 @@ public class ABackpacks : RustScript
             containerEntity.panelName = ResizableLootPanelName;
 
             // Temporarily disable networking to prevent initially sending the entity to clients based on the positional network group.
-            containerEntity._limitedNetworking = true;
+            containerEntity.SetLimitedNetworking(true);
 
             containerEntity.EnableSaving(false);
             containerEntity.Spawn();
@@ -1900,13 +1883,13 @@ public class ABackpacks : RustScript
 
                 if (AssociatedEntityId != 0)
                 {
-                    BaseNetworkableExtension associatedEntity = BaseNetworkable.serverEntities.Find(AssociatedEntityId) as BaseNetworkableExtension;
+                    BaseNetworkable associatedEntity = BaseNetworkable.serverEntities.Find(new NetworkableId(AssociatedEntityId));
                     if (associatedEntity != null)
                     {
                         // Re-enable networking since it's disabled when the entity is disassociated.
-                        associatedEntity._limitedNetworking = false;
+                        associatedEntity.SetLimitedNetworking(false);
 
-                        item.instanceData.subEntity = AssociatedEntityId;
+                        item.instanceData.subEntity.Value = AssociatedEntityId;
                     }
                 }
             }
@@ -1935,11 +1918,10 @@ public class ABackpacks : RustScript
             IsBlueprint = item.IsBlueprint(),
             BlueprintTarget = item.blueprintTarget,
             DataInt = item.instanceData?.dataInt ?? 0,
-            AssociatedEntityId = item.instanceData?.subEntity ?? 0,
+            AssociatedEntityId = (uint)(item.instanceData?.subEntity.Value ?? 0),
             Name = item.name,
             Text = item.text
         };
     }
-
     #endregion
 }

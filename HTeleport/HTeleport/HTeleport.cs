@@ -129,6 +129,7 @@ public class HTeleport : RustScript
 
     public void OnChatCommand(BasePlayer player, string command, string[] args = null)
     {
+        if (!player.userID.IsSteamId()) return;
         //string arginfo = string.Join(",", args);
         //Utils.DoLog($"Heard: {command}/{arginfo}");
 

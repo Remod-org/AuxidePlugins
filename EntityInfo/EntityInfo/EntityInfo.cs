@@ -2,7 +2,6 @@ using Auxide;
 using Facepunch;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 [Info("EntityInfo", "RFC1920", "1.0.1")]
@@ -11,6 +10,19 @@ internal class EntityInfo : RustScript
 {
     private static ConfigData configData;
     private readonly int layerMasks = LayerMask.GetMask("Construction", "Construction Trigger", "Trigger", "Deployed");
+    private const string permCheckOwners  = "entityinfo.cancheckowners";
+    private const string permCheckCodes   = "entityinfo.cancheckcodes";
+    private const string permSeeDetails   = "entityinfo.seedetails";
+    private const string permChangeOwners = "entityinfo.canchangeowners";
+
+    private void _DoLog(string message, bool mundane = false)
+    {
+        if (configData.debug)
+        {
+            if (!mundane) Utils.DoLog($"{message}");
+            else if (mundane && configData.debug) Utils.DoLog($"{message}");
+        }
+    }
 
     public override void LoadDefaultMessages()
     {
@@ -57,12 +69,17 @@ internal class EntityInfo : RustScript
 
     public override void Initialize()
     {
+        Permissions.RegisterPermission(Name, permCheckCodes);
+        Permissions.RegisterPermission(Name, permSeeDetails);
+        Permissions.RegisterPermission(Name, permCheckOwners);
+        Permissions.RegisterPermission(Name, permChangeOwners);
         LoadConfig();
     }
 
     public class ConfigData
     {
         public bool Enable;
+        public bool debug;
     }
 
     public void SaveConfig(ConfigData configuration)
@@ -220,8 +237,8 @@ internal class EntityInfo : RustScript
                     BaseEntity baseLock = targetEntity.GetSlot(BaseEntity.Slot.Lock);
                     if (baseLock is CodeLock)
                     {
-                        string keyCode = baseLock.GetFieldValue<string>("code");
-                        string guestCode = baseLock.GetFieldValue<string>("guestCode");
+                        string keyCode = baseLock.GetCode();
+                        string guestCode = baseLock.GetGuestCode();
                         msg += "\n" + string.Format("Lock: Codes", keyCode, guestCode);
                     }
                 }
@@ -530,16 +547,4 @@ internal class EntityInfo : RustScript
         entity.OwnerID = 0;
     }
     #endregion
-}
-
-namespace Auxide
-{
-    public static class CodeLockExtension
-    {
-        public static T GetFieldValue<T>(this object obj, string name)
-        {
-            FieldInfo field = obj.GetType().GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            return (T)field?.GetValue(obj);
-        }
-    }
 }
