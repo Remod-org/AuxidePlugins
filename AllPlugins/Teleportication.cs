@@ -38,7 +38,7 @@ using Auxide.Scripting;
 
 [Info("HTeleportication", "RFC1920", "1.0.4")]
 [Description("A version of Teleportication for Auxide")]
-internal class HTeleportication : RustScript
+internal class Teleportication : RustScript
 {
     #region vars
     private SortedDictionary<ulong, Vector3> SavedPoints = new SortedDictionary<ulong, Vector3>();
@@ -2277,7 +2277,8 @@ internal class HTeleportication : RustScript
         player.StartSleeping();
         player.SendNetworkUpdateImmediate(false);
 
-        if (player.net?.connection != null) player.ClientRPCPlayer(null, player, "StartLoading");
+        //if (player.net?.connection != null) player.ClientRPCPlayer(null, player, "StartLoading");
+        RpcTarget.Player("StartLoading", player);
     }
 
     private void StartSleeping(BasePlayer player)

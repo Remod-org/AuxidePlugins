@@ -2,11 +2,12 @@ using Auxide;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using UnityEngine;
 
 [Info("HLootProtect", "RFC1920", "1.0.2")]
 [Description("Basic loot protection for Auxide")]
-public class HLootProtect : RustScript
+public class LootProtect : RustScript
 {
     private static ConfigData configData;
     private Dictionary<ulong, List<Share>> sharing = new Dictionary<ulong, List<Share>>();

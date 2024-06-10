@@ -129,6 +129,7 @@ public class HTeleport : RustScript
 
     public void OnChatCommand(BasePlayer player, string command, string[] args = null)
     {
+        if (player == null) return;
         if (!player.userID.IsSteamId()) return;
         //string arginfo = string.Join(",", args);
         //Utils.DoLog($"Heard: {command}/{arginfo}");
@@ -268,7 +269,8 @@ public class HTeleport : RustScript
                 player.SetParent(null, true, true);
                 player.SetServerFall(true);
                 player.MovePosition(target);
-                player.ClientRPCPlayer(null, player, "ForcePositionTo", target);
+                //player.ClientRPCPlayer(null, player, "ForcePositionTo", target);
+                player.ClientRPC(RpcTarget.Player("ForcePositionTo", player), target);
             }
             finally
             {
@@ -287,8 +289,9 @@ public class HTeleport : RustScript
         player.UpdateNetworkGroup();
         player.StartSleeping();
         player.SendNetworkUpdateImmediate(false);
-        //if (configData.debug) Utils.DoLog("Done!");
-        if (player.net?.connection != null) player.ClientRPCPlayer(null, player, "StartLoading");
+        if (configData.debug) Utils.DoLog("Done!");
+        //if (player.net?.connection != null) player.ClientRPCPlayer(null, player, "StartLoading");
+        if (player.net?.connection != null) player.ClientRPC(RpcTarget.Player("StartLoading", player));
         //player.EndSleeping();
     }
 

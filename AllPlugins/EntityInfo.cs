@@ -474,8 +474,7 @@ internal class EntityInfo : RustScript
             return 0;
         }
 
-        ulong userID;
-        if (ulong.TryParse(name, out userID))
+        if (ulong.TryParse(name, out ulong userID))
         {
             return userID;
         }
@@ -497,14 +496,7 @@ internal class EntityInfo : RustScript
             return null;
         }
 
-        BasePlayer player = BasePlayer.Find(name);
-
-        if (player != null)
-        {
-            return player;
-        }
-
-        return null;
+        return BasePlayer.Find(name);
     }
 
     private bool HasCupboardAccess(BuildingPrivlidge cupboard, BasePlayer player)

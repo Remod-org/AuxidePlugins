@@ -1,6 +1,6 @@
 ﻿[Info("HDayNight", "RFC1920", "1.0.1")]
 [Description("Provides day, night, and timeset/settime commands, with a limit timer.")]
-public class HDayNight : RustScript
+public class DayNight : RustScript
 {
     private static ConfigData configData;
     private bool limitCleared = true;

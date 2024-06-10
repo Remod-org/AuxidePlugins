@@ -7,7 +7,7 @@ using UnityEngine;
 
 [Info("HKits", "RFC1920", "1.0.2")]
 [Description("Basic user kits for Auxide")]
-public class HKits : RustScript
+public class Kits : RustScript
 {
     private static ConfigData configData;
     private static Dictionary<string, Kit> kits = new Dictionary<string, Kit>();

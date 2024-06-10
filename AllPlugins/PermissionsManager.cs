@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 
-public class HPermissionsManager : RustScript
+public class PermissionsManager : RustScript
 {
     // To do
     // Change button colour of permission to indicate that player/group has at least one perm from that plugin. 
@@ -42,7 +42,7 @@ public class HPermissionsManager : RustScript
     #region Hooks
     private void OnPluginLoaded(RustScript plugin)
     {
-        if (plugin is HPermissionsManager)
+        if (plugin is PermissionsManager)
         {
             return;
         }
@@ -53,7 +53,7 @@ public class HPermissionsManager : RustScript
 
     private void OnPluginUnloaded(RustScript plugin)
     {
-        if (plugin is HPermissionsManager)
+        if (plugin is PermissionsManager)
         {
             return;
         }

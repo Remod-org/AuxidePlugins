@@ -9,7 +9,7 @@ using Facepunch.Extend;
 
 [Info("HEconomics", "RFC1920", "1.0.2")]
 [Description("A version of Economics for Auxide")]
-public class HEconomics : RustScript
+public class Economics : RustScript
 {
     #region Configuration
     private Configuration configData;
