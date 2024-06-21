@@ -41,18 +41,18 @@ public class AuxideBots : RustScript
     #endregion vars
 
     #region Message
-    public string Lang(string input, params object[] args)
-    {
-        return string.Format(lang.Get(input), args);
-    }
+    //public string Lang(string input, params object[] args)
+    //{
+    //    return string.Format(lang.Get(input), args);
+    //}
 
-    public void Message(BasePlayer player, string input, params object[] args)
-    {
-        Utils.SendReply(player, string.Format(lang.Get(input), args));
-    }
+    //public void Message(BasePlayer player, string input, params object[] args)
+    //{
+    //    Utils.SendReply(player, string.Format(lang.Get(input), args));
+    //}
 
 
-    private void DoLog(string message)
+    private void _DoLog(string message)
     {
         if (configData.Options.debug)
         {
@@ -182,7 +182,7 @@ public class AuxideBots : RustScript
         if (!player.IsAdmin) return;
         if (args.Length > 0)
         {
-            DoLog(string.Join(",", args));
+            _DoLog(string.Join(",", args));
             switch (args[0])
             {
                 // The b version of the commands here are for the GUI, the non-B are left behind for command line people, if any
@@ -447,7 +447,7 @@ public class AuxideBots : RustScript
                         {
                             if (bot.info.monument == monname)
                             {
-                                DoLog($"Killing bot {bot.info.displayName} at {monname}");
+                                _DoLog($"Killing bot {bot.info.displayName} at {monname}");
                                 UnityEngine.Object.Destroy(bot);
                             }
                         }
@@ -486,7 +486,7 @@ public class AuxideBots : RustScript
                         {
                             if (bot.info.monument == monname)
                             {
-                                DoLog($"Killing bot {bot.info.displayName} at {monname}");
+                                _DoLog($"Killing bot {bot.info.displayName} at {monname}");
                                 UnityEngine.Object.Destroy(bot);
                             }
                         }
@@ -512,7 +512,7 @@ public class AuxideBots : RustScript
                         newarg.RemoveAt(0);
                         newarg.RemoveAt(0);
                         string monname = string.Join(" ", newarg);
-                        DoLog($"Checking kits for '{monname}'");
+                        _DoLog($"Checking kits for '{monname}'");
                         if (spawnpoints[monname].kits == null || spawnpoints[monname].kits.Count == 0)
                         {
                             spawnpoints[monname].kits = new List<string>();
@@ -591,15 +591,15 @@ public class AuxideBots : RustScript
         // Used to identify bot for respawn on death
         if (hpcacheid.ContainsKey(userid))
         {
-            DoLog($"{userid} found in cached ids!");
+            _DoLog($"{userid} found in cached ids!");
             MonBotPlayer botinfo = hpcacheid[userid];
             SpawnProfile sp = spawnpoints[botinfo.info.monument];
-            DoLog($"Respawning bot {botinfo.info.displayName} at {sp.monname}");
+            _DoLog($"Respawning bot {botinfo.info.displayName} at {sp.monname}");
             SpawnBot(sp, botinfo.spawnPos, botinfo.info.kit);
         }
         else
         {
-            DoLog($"{userid} not found in cached ids :(");
+            _DoLog($"{userid} not found in cached ids :(");
         }
     }
 
@@ -609,7 +609,7 @@ public class AuxideBots : RustScript
         if (pos == default) return;
         pos = AdjustSpawnPoint(pos, sp.roamRange / 2);
         spawnpoints[sp.monname].pos.Add(pos);
-        DoLog($"Spawning bot at {pos}");
+        _DoLog($"Spawning bot at {pos}");
         HumanNPC bot = (HumanNPC)GameManager.server.CreateEntity(sci, pos, new Quaternion(), true);
         bot.Spawn();
         spawnpoints[sp.monname].ids.Add(bot.userID);
@@ -622,13 +622,13 @@ public class AuxideBots : RustScript
 
         this.NextTick(() =>
         {
-            DoLog($"Adding Mono to bot {botname} at {sp.monname} ({pos})");
+            _DoLog($"Adding Mono to bot {botname} at {sp.monname} ({pos})");
             try
             {
                 MonBotPlayer mono = bot.gameObject.AddComponent<MonBotPlayer>();
                 mono.spawnPos = pos;
 
-                DoLog("Setting info object");
+                _DoLog("Setting info object");
                 mono.info = new MonBotInfo(bot.userID, bot.transform.position, bot.transform.rotation)
                 {
                     displayName = botname,
@@ -654,7 +654,7 @@ public class AuxideBots : RustScript
                 //mono.UpdateHealth(mono.info);
                 bot.startHealth = sp.startHealth;
 
-                DoLog("Setting brain object");
+                _DoLog("Setting brain object");
                 bot.Brain.Navigator.Agent.agentTypeID = -1372625422;
                 bot.Brain.Navigator.DefaultArea = "Walkable";
                 bot.Brain.Navigator.Init(bot, bot.Brain.Navigator.Agent);
@@ -664,18 +664,19 @@ public class AuxideBots : RustScript
                 bot.Brain.Navigator.BestCoverPointMaxDistance = mono.info.roamRange / 2;
                 bot.Brain.Navigator.BestRoamPointMaxDistance = mono.info.roamRange;
                 bot.Brain.Navigator.MaxRoamDistanceFromHome = mono.info.roamRange;
-                bot.Brain.Senses.Init(bot, 5f, mono.info.roamRange, mono.info.detectRange, -1f, true, false, true, mono.info.detectRange, !mono.info.hostile, false, true, EntityType.Player, false);
+                bot.Brain.Senses.Init(bot, bot.Brain, 5f, mono.info.roamRange, mono.info.detectRange, -1f, true, false, true, mono.info.detectRange, !mono.info.hostile, false, true, EntityType.Player, false);
 
-                DoLog("Setting name and inventory");
+                _DoLog("Setting name and inventory");
                 bot.displayName = botname;
                 hpcacheid.Add(bot.userID, mono);
                 if (kit.Length > 0)
                 {
                     bot.inventory.Strip();
-                    Kits?.Call("GiveKit", bot, kit);
+                    //Kits?.CallHook("GiveKit", bot, kit);
+                    //ScriptManager.CallHook("GiveKit", bot, kit);
                 }
 
-                DoLog("Silencing effects");
+                _DoLog("Silencing effects");
                 ScientistNPC npc = bot as ScientistNPC;
                 npc.DeathEffects = new GameObjectRef[0];
                 npc.RadioChatterEffects = new GameObjectRef[0];
@@ -685,7 +686,7 @@ public class AuxideBots : RustScript
             }
             catch (Exception ex)
             {
-                DoLog($"Unable to setup bot {botname} at {sp.monname} ({pos}) - {ex}");
+                _DoLog($"Unable to setup bot {botname} at {sp.monname} ({pos}) - {ex}");
             }
         });
 
@@ -697,7 +698,7 @@ public class AuxideBots : RustScript
 
     private void LoadBots(string profile = "", int quantity = 0)
     {
-        DoLog("LoadBots called");
+        _DoLog("LoadBots called");
         foreach (KeyValuePair<string, SpawnProfile> sp in new Dictionary<string, SpawnProfile>(spawnpoints))
         {
             if (profile.Length > 0 && !sp.Key.Equals(profile)) continue;
@@ -705,7 +706,7 @@ public class AuxideBots : RustScript
             Vector3 spawnPos = sp.Value.monpos;
             if (newsave && monPos.ContainsKey(sp.Key))
             {
-                DoLog($"Changing {sp.Key} location due to wipe to {spawnPos}");
+                _DoLog($"Changing {sp.Key} location due to wipe to {spawnPos}");
                 spawnPos = monPos[sp.Key];
             }
             else if (newsave && !monPos.ContainsKey(sp.Key) && sp.Value.spawnCount > 0)
@@ -717,7 +718,7 @@ public class AuxideBots : RustScript
             int spawnqty = quantity > 0 ? quantity : sp.Value.spawnCount;
             if (spawnqty > 0)
             {
-                DoLog($"Working on spawn at {sp.Key}");
+                _DoLog($"Working on spawn at {sp.Key}");
                 for (int i = 0; i < spawnqty; i++)
                 {
                     string kit;
@@ -743,7 +744,7 @@ public class AuxideBots : RustScript
 
     private void LoadBots(Vector3 location, string profile, string group, int quantity = 0)
     {
-        DoLog("LoadBots by location called");
+        _DoLog("LoadBots by location called");
         foreach (KeyValuePair<string, SpawnProfile> sp in new Dictionary<string, SpawnProfile>(spawnpoints))
         {
             if (!sp.Key.Equals(profile)) continue;
@@ -753,7 +754,7 @@ public class AuxideBots : RustScript
 
             if (quantity > 0)
             {
-                DoLog($"Working on location spawn at {sp.Key}");
+                _DoLog($"Working on location spawn at {sp.Key}");
                 for (int i = 0; i < quantity; i++)
                 {
                     string kit;
@@ -818,11 +819,11 @@ public class AuxideBots : RustScript
                 newpos.y = TerrainMeta.HeightMap.GetHeight(newpos);
                 if (i >= max)
                 {
-                    DoLog($"Found meh spawn position after maxing out on checks at {max}");
+                    _DoLog($"Found meh spawn position after maxing out on checks at {max}");
                 }
                 else
                 {
-                    DoLog($"Found adequate spawn position after {i} check(s)");
+                    _DoLog($"Found adequate spawn position after {i} check(s)");
                 }
                 newpos.y = TerrainMeta.HeightMap.GetHeight(newpos);
                 return newpos;
@@ -853,7 +854,7 @@ public class AuxideBots : RustScript
 
         foreach (KeyValuePair<string, SpawnProfile> sp in spawnpoints)
         {
-            DoLog($"Loaded profile {sp.Key}");
+            _DoLog($"Loaded profile {sp.Key}");
             if (monPos.ContainsKey(sp.Key))
             {
                 sp.Value.monpos = monPos[sp.Key];
@@ -889,23 +890,23 @@ public class AuxideBots : RustScript
         if (humannpc == null) return;
         MonBotPlayer npc = humannpc.GetComponent<MonBotPlayer>();
         if (npc == null) return;
-        DoLog("OnEntityDeath: Found MonBot player");
+        _DoLog("OnEntityDeath: Found MonBot player");
 
-        hpcacheid.Remove(humannpc.net.ID);
+        hpcacheid.Remove(ulong.Parse(humannpc.net.ID.ToString()));
 
         if (npc.info.dropWeapon)
         {
-            DoLog("OnEntityDeath: Attempting to drop weapon");
+            _DoLog("OnEntityDeath: Attempting to drop weapon");
             if (npc.activeItem != null)
             {
-                DoLog($"Dropping {npc.info.displayName}'s activeItem: {npc.activeItem.info.shortname}");
+                _DoLog($"Dropping {npc.info.displayName}'s activeItem: {npc.activeItem.info.shortname}");
                 Vector3 vector3 = new Vector3(UnityEngine.Random.Range(-2f, 2f), 0.2f, UnityEngine.Random.Range(-2f, 2f));
                 npc.activeItem.Drop(humannpc.GetDropPosition(), humannpc.GetInheritedDropVelocity() + (vector3.normalized * 3f));
-                humannpc.svActiveItemID = 0;
+                humannpc.svActiveItemID = new ItemId(0);
             }
         }
 
-        DoLog($"Populating inventory cache for {npc.info.userid}");
+        _DoLog($"Populating inventory cache for {npc.info.userid}");
         ItemContainer[] sourceinv = { humannpc.inventory.containerMain, humannpc.inventory.containerWear, humannpc.inventory.containerBelt };
         InvCache.Add(humannpc.userID, new Inventories());
         for (int i = 0; i < sourceinv.Length; i++)
@@ -920,12 +921,12 @@ public class AuxideBots : RustScript
                 });
             }
         }
-        DoLog($"DONE populating inventory cache for {npc.info.userid}");
+        _DoLog($"DONE populating inventory cache for {npc.info.userid}");
 
-        DoLog("Checking respawn variable");
+        _DoLog("Checking respawn variable");
         if (npc?.info.respawn == true)
         {
-            DoLog($"Setting {npc.info.respawnTimer} second respawn timer for {npc.info.displayName} ({npc.info.userid})");
+            _DoLog($"Setting {npc.info.respawnTimer} second respawn timer for {npc.info.displayName} ({npc.info.userid})");
             //timer.Once(npc.info.respawnTimer, () => SpawnBot(npc.info.userid));
         }
     }
@@ -937,7 +938,7 @@ public class AuxideBots : RustScript
         if (hpcacheid.ContainsKey(userid))
         {
             MonBotPlayer npc = hpcacheid[userid];
-            DoLog($"Setting corpse loot panel name to {npc.info.displayName}");
+            _DoLog($"Setting corpse loot panel name to {npc.info.displayName}");
             corpse._playerName = npc.info.displayName;
             corpse.lootPanelName = npc.info.displayName;
 
@@ -993,7 +994,7 @@ public class AuxideBots : RustScript
         MonBotPlayer hp = entity.GetComponent<MonBotPlayer>();
         if (hp != null)
         {
-            Interface.Oxide.CallHook("OnHitNPC", entity.GetComponent<BaseCombatEntity>(), hitinfo);
+            Broadcast("OnHitNPC", entity.GetComponent<BaseCombatEntity>(), hitinfo);
             if (hp.info.invulnerable)
             {
                 //hitinfo.damageTypes = new DamageTypeList();
@@ -1019,7 +1020,7 @@ public class AuxideBots : RustScript
         MonBotPlayer hp = target.GetComponentInParent<MonBotPlayer>();
         if (hp?.info.lootable == false)
         {
-            DoLog($"Player {player.displayName}:{player.UserIDString} looting MonBot {hp.info.displayName}");
+            _DoLog($"Player {player.displayName}:{player.UserIDString} looting MonBot {hp.info.displayName}");
             NextTick(player.EndLooting);
             return true;
         }
@@ -1041,7 +1042,7 @@ public class AuxideBots : RustScript
                 return null;
             }
 
-            DoLog($"Player {player.displayName}:{player.UserIDString} looting MonBot {corpse.name}:{corpse.playerSteamID}");
+            _DoLog($"Player {player.displayName}:{player.UserIDString} looting MonBot {corpse.name}:{corpse.playerSteamID}");
             if (!hp.info.lootable)
             {
                 NextTick(player.EndLooting);
@@ -1112,7 +1113,7 @@ public class AuxideBots : RustScript
             foreach (ulong botid in profile.Value.ids)
             {
                 flag = true;
-                BaseNetworkable.serverEntities.Find((uint)botid)?.Kill();
+                BaseNetworkable.serverEntities.Find(new NetworkableId(botid))?.Kill();
             }
         }
         profile.Value.zonemap.Remove(group);
@@ -1150,7 +1151,7 @@ public class AuxideBots : RustScript
         foreach (ulong id in spawnpoints[group].ids)
         {
             // Remove the bots
-            BaseNetworkable.serverEntities.Find((uint)id)?.Kill();
+            BaseNetworkable.serverEntities.Find(new NetworkableId(id))?.Kill();
             ids[i] = id.ToString();
             i++;
         }
@@ -1161,20 +1162,20 @@ public class AuxideBots : RustScript
 
     private string GetMonBotName(ulong npcid)
     {
-        DoLog($"Looking for monbot: {npcid}");
+        _DoLog($"Looking for monbot: {npcid}");
         MonBotPlayer hp = FindMonBotByID(npcid);
         if (hp == null)
         {
             return null;
         }
 
-        DoLog($"Found monbot: {hp.player.displayName}");
+        _DoLog($"Found monbot: {hp.player.displayName}");
         return hp.info.displayName;
     }
 
     private void SetMonBotInfo(ulong npcid, string toset, string data, string rot = null)
     {
-        DoLog($"SetMonBotInfo called for {npcid} {toset},{data}");
+        _DoLog($"SetMonBotInfo called for {npcid} {toset},{data}");
         MonBotPlayer hp = FindMonBotByID(npcid);
         if (hp == null)
         {
@@ -1254,14 +1255,14 @@ public class AuxideBots : RustScript
             case "rot":
                 break;
         }
-        DoLog("Saving Data");
+        _DoLog("Saving Data");
         SaveData();
         //RespawnNPC(hp.player);
     }
 
     private void GiveMonBot(global::HumanNPC bot, string itemname, string loc = "wear", ulong skinid = 0, int count = 1)
     {
-        DoLog($"GiveMonBot called: {bot.displayName}, {itemname}, {loc}");
+        _DoLog($"GiveMonBot called: {bot.displayName}, {itemname}, {loc}");
         MonBotPlayer npc = bot.GetComponent<MonBotPlayer>();
         if (npc != null)
         {
@@ -1298,7 +1299,7 @@ public class AuxideBots : RustScript
     private void GiveMonBot(ulong npcid, string itemname, string loc = "wear", ulong skinid = 0, int count = 1)
     {
         MonBotPlayer npc = FindMonBotByID(npcid);
-        DoLog($"GiveMonBot called: {npc.player.displayName}, {itemname}, {loc}");
+        _DoLog($"GiveMonBot called: {npc.player.displayName}, {itemname}, {loc}");
         if (npc.player != null)
         {
             switch (loc)
@@ -1699,7 +1700,7 @@ public class AuxideBots : RustScript
     {
         if (set)
         {
-            DoLog($"Setting isopen for {uid}");
+            _DoLog($"Setting isopen for {uid}");
             if (!isopen.Contains(uid))
             {
                 isopen.Add(uid);
@@ -1707,7 +1708,7 @@ public class AuxideBots : RustScript
 
             return;
         }
-        DoLog($"Clearing isopen for {uid}");
+        _DoLog($"Clearing isopen for {uid}");
         isopen.Remove(uid);
     }
     #endregion GUI
@@ -1718,18 +1719,18 @@ public class AuxideBots : RustScript
         MonBotPlayer hp;
         if (hpcacheid.TryGetValue(userid, out hp))
         {
-            DoLog($"Found matching NPC for userid {userid} in cache");
+            _DoLog($"Found matching NPC for userid {userid} in cache");
             return hp;
         }
         foreach (MonBotPlayer humanplayer in Resources.FindObjectsOfTypeAll<MonBotPlayer>())
         {
-            DoLog($"Is {humanplayer.player.displayName} a MonBot?");
+            _DoLog($"Is {humanplayer.player.displayName} a MonBot?");
             if (humanplayer.player.userID != userid)
             {
                 continue;
             }
 
-            DoLog($"Found matching NPC for userid {userid}");
+            _DoLog($"Found matching NPC for userid {userid}");
             return hpcacheid[userid];
         }
         return null;
@@ -1737,28 +1738,28 @@ public class AuxideBots : RustScript
 
     private BasePlayer FindPlayerByID(ulong userid)
     {
-        DoLog($"Searching for player object with userid {userid}");
+        _DoLog($"Searching for player object with userid {userid}");
         foreach (BasePlayer player in Resources.FindObjectsOfTypeAll<BasePlayer>())
         {
             if (player.userID == userid)
             {
-                DoLog("..found one!");
+                _DoLog("..found one!");
                 return player;
             }
         }
-        DoLog("..found NONE");
+        _DoLog("..found NONE");
         return null;
     }
 
     private void UpdateInventory(MonBotPlayer hp)
     {
-        DoLog("UpdateInventory called...");
+        _DoLog("UpdateInventory called...");
         //if (hp.player.inventory == null) return;
         if (hp.info == null)
         {
             return;
         }
-        DoLog("Destroying inventory");
+        _DoLog("Destroying inventory");
         hp.player.inventory.Strip();
         //hp.player.inventory.DoDestroy();
         //hp.player.inventory.ServerInit(hp.player);
@@ -1970,7 +1971,8 @@ public class AuxideBots : RustScript
             {
                 inmelee = false;
                 CancelInvoke("DoTriggerDown");
-                player.Brain.states[AIState.Roam].StateEnter(player.Brain, player);
+                //player.Brain.states[AIState.Roam].StateEnter(player.Brain, player);
+                player.Brain.SwitchToState(AIState.Roam);
             }
         }
 
@@ -1986,7 +1988,7 @@ public class AuxideBots : RustScript
                 {
                     if (canHurt)
                     {
-                        Instance.DoLog($"TriggerDown on {attackPlayer.displayName}");
+                        Instance._DoLog($"TriggerDown on {attackPlayer.displayName}");
                         //player.TriggerDown();
                         melee.ServerUse(player.damageScale, null);
 
@@ -2035,7 +2037,7 @@ public class AuxideBots : RustScript
 
             if (player.Brain.Navigator.Agent?.isOnNavMesh != true)
             {
-                player.Brain.Navigator.Destination = spawnPos;
+                player.Brain.Navigator.Destination.Set(spawnPos.x, spawnPos.y, spawnPos.z);
                 player.SetDestination(spawnPos);
             }
             else
@@ -2253,7 +2255,7 @@ public class AuxideBots : RustScript
 
         if (player.net?.connection != null)
         {
-            player.ClientRPCPlayer(null, player, "StartLoading");
+            player.ClientRPC(RpcTarget.Player("StartLoading", player));
         }
     }
 

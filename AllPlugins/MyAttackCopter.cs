@@ -44,15 +44,13 @@
  */
 #endregion
 using Auxide;
-using UnityEngine;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Collections;
-using Network;
+using System.Reflection;
+using UnityEngine;
 
-[Info("My Attack Copter", "RFC1920", "0.1.0")]
+[Info("My Attack Copter", "RFC1920", "0.1.1")]
 [Description("Spawn an Attack Helicopter")]
 public class MyAttackCopter : RustScript
 {
@@ -69,13 +67,13 @@ public class MyAttackCopter : RustScript
     private const string AttackcopterAdmin = "myattackcopter.admin";
     private const string AttackcopterCooldown = "myattackcopter.cooldown";
     private const string AttackcopterUnlimited = "myattackcopter.unlimited";
-    private const string AttackcopterCanHover = "myattackcopter.canhover";
+    //private const string AttackcopterCanHover = "myattackcopter.canhover";
 
     private static LayerMask layerMask = LayerMask.GetMask("Terrain", "World", "Construction");
 
     private Dictionary<ulong, ulong> currentMounts = new Dictionary<ulong, ulong>();
-    private Dictionary<int, Hovering> hovers = new Dictionary<int, Hovering>();
-    private Dictionary<ulong, DateTime> hoverDelayTimers = new Dictionary<ulong, DateTime>();
+    //private Dictionary<int, Hovering> hovers = new Dictionary<int, Hovering>();
+    //private Dictionary<ulong, DateTime> hoverDelayTimers = new Dictionary<ulong, DateTime>();
     private static readonly DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0);
 
     private class StoredData
@@ -124,40 +122,43 @@ public class MyAttackCopter : RustScript
             GetVIPSettings(pl, out vipsettings);
             bool vip = vipsettings != null;
 
-            if (Permissions.UserHasPermission(AttackcopterCanHover, playerAttack.Key.ToString()))
-            {
-                hovers.Add(attackCopter.GetInstanceID(), attackCopter.gameObject.AddComponent<Hovering>());
-            }
-
-            StorageContainer fuelCan = attackCopter?.GetFuelSystem().fuelStorageInstance.Get(true);
+            //if (Permissions.UserHasPermission(AttackcopterCanHover, playerAttack.Key.ToString()))
+            //{
+            //    hovers.Add(attackCopter.GetInstanceID(), attackCopter.gameObject.AddComponent<Hovering>());
+            //}
+            DoLog("Setting up fuel");
+            FieldInfo fuelPerSec = typeof(Minicopter).GetField("fuelPerSec", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            IFuelSystem fs = attackCopter?.GetComponent<VehicleEngineController<PlayerHelicopter>>()?.FuelSystem;
+            ItemContainer fsinv = fs?.GetInventory();
             if (Permissions.UserHasPermission(AttackcopterUnlimited, playerAttack.Key.ToString()) || (vip && vipsettings.unlimited))
             {
-                var copter = attackCopter as PlayerHelicopter;
-                copter.fuelPerSec = 0f;
-                if (fuelCan?.IsValid() == true)
+                fuelPerSec?.SetValue(fs, 0);
+                if (fs?.IsValidEntityReference() == true)
                 {
-                    if (fuelCan?.inventory.IsEmpty() != true)
+                    if (fsinv?.IsEmpty() != true)
                     {
-                        DoLog($"Setting fuel for AttackCopter {playerAttack.Value} owned by {playerAttack.Key}.");
-                        ItemManager.CreateByItemID(-946369541, 1)?.MoveToContainer(fuelCan?.inventory);
-                        fuelCan?.inventory.MarkDirty();
+                        DoLog($"Setting fuel for MiniCopter {playerAttack.Value} owned by {playerAttack.Key}.");
+                        ItemManager.CreateByItemID(-946369541, 1)?.MoveToContainer(fsinv);
+                        fsinv.MarkDirty();
                     }
 
                     // Default for unlimited fuel
-                    fuelCan?.SetFlag(BaseEntity.Flags.Locked, true);
+                    fsinv?.SetFlag(ItemContainer.Flag.NoItemInput, true);
                     if (configData.Global.allowFuelIfUnlimited || (vip && vipsettings.canloot))
                     {
-                        fuelCan?.SetFlag(BaseEntity.Flags.Locked, false);
+                        fsinv?.SetFlag(ItemContainer.Flag.NoItemInput, false);
                     }
                 }
                 continue;
             }
             else
             {
+                DoLog("Owner does not have unlimited Permission");
                 // Done here in case player's unlimited permission was revoked.
-                fuelCan?.SetFlag(BaseEntity.Flags.Locked, false);
+                fsinv?.SetFlag(ItemContainer.Flag.NoItemInput, false);
             }
-            attackCopter.fuelPerSec = vip ? vipsettings.stdFuelConsumption : configData.Global.stdFuelConsumption;
+            DoLog("Setting fuel utilization");
+            fuelPerSec.SetValue(fs, vip ? vipsettings.stdFuelConsumption : configData.Global.stdFuelConsumption);
         }
     }
 
@@ -184,13 +185,13 @@ public class MyAttackCopter : RustScript
         Permissions.RegisterPermission(Name, AttackcopterAdmin);
         Permissions.RegisterPermission(Name, AttackcopterCooldown);
         Permissions.RegisterPermission(Name, AttackcopterUnlimited);
-        Permissions.RegisterPermission(Name, AttackcopterCanHover);
+        //Permissions.RegisterPermission(Name, AttackcopterCanHover);
     }
 
     private void Unload()
     {
         SaveData();
-        foreach (KeyValuePair<int, Hovering> hover in hovers) UnityEngine.Object.Destroy(hover.Value);
+        //foreach (KeyValuePair<int, Hovering> hover in hovers) UnityEngine.Object.Destroy(hover.Value);
     }
     #endregion
 
@@ -252,67 +253,67 @@ public class MyAttackCopter : RustScript
 
     private void OnPlayerInput(BasePlayer player, InputState input)
     {
-        if (player?.userID.IsSteamId() != true || input == null) return;
+        if (player?.UserIDString.IsSteamId() != true || input == null) return;
         if (!configData.Global.UseKeystrokeForHover) return;
-        if (!Permissions.UserHasPermission(AttackcopterCanHover, player.UserIDString)) return;
-        //if (input.current.buttons > 0) DoLog($"OnPlayerInput: {input.current.buttons}");
-        if (!player.isMounted) return;
-        int hoverkey = configData.Global.HoverKey > 0 ? configData.Global.HoverKey : (int)BUTTON.FIRE_THIRD; // MMB
-        bool dohover = input.current.buttons == hoverkey;
-        bool stabilize = input.current.buttons == (int)BUTTON.BACKWARD;
+        //if (!Permissions.UserHasPermission(AttackcopterCanHover, player.UserIDString)) return;
+        ////if (input.current.buttons > 0) DoLog($"OnPlayerInput: {input.current.buttons}");
+        //if (!player.isMounted) return;
+        //int hoverkey = configData.Global.HoverKey > 0 ? configData.Global.HoverKey : (int)BUTTON.FIRE_THIRD; // MMB
+        //bool dohover = input.current.buttons == hoverkey;
+        //bool stabilize = input.current.buttons == (int)BUTTON.BACKWARD;
 
-        if (!(dohover || stabilize)) return;
-        PlayerHelicopter attack = player.GetMountedVehicle() as PlayerHelicopter;
-        if (attack == null) return;
+        //if (!(dohover || stabilize)) return;
+        //PlayerHelicopter attack = player.GetMountedVehicle() as PlayerHelicopter;
+        //if (attack == null) return;
 
-        DoLog($"Stabilize: {stabilize}, hover toggle: {dohover}");
-        DoLog($"HoverDelay: {hoverDelayTimers.ContainsKey(player.userID)}");
-        // Process hoverDelayTimers for user regardless of hover or stabilize.
-        //   If trying to hover and timer not expired, return.
-        //   If timer expired, remove timer and continue.
-        if (hoverDelayTimers.ContainsKey(player.userID))
-        {
-            if (DateTime.Now - hoverDelayTimers[player.userID] < TimeSpan.FromMilliseconds(1000) && dohover)
-            {
-                DoLog("Hover delay not elapsed, returning");
-                return;
-            }
-            hoverDelayTimers.Remove(player.userID);
-        }
+        //DoLog($"Stabilize: {stabilize}, hover toggle: {dohover}");
+        //DoLog($"HoverDelay: {hoverDelayTimers.ContainsKey(player.userID)}");
+        //// Process hoverDelayTimers for user regardless of hover or stabilize.
+        ////   If trying to hover and timer not expired, return.
+        ////   If timer expired, remove timer and continue.
+        //if (hoverDelayTimers.ContainsKey(player.userID))
+        //{
+        //    if (DateTime.Now - hoverDelayTimers[player.userID] < TimeSpan.FromMilliseconds(1000) && dohover)
+        //    {
+        //        DoLog("Hover delay not elapsed, returning");
+        //        return;
+        //    }
+        //    hoverDelayTimers.Remove(player.userID);
+        //}
 
-        // Now, if trying to hover, setup a new delay timer for the next keystroke.
-        if (dohover)
-        {
-            DoLog("Resetting hover delay timer");
-            hoverDelayTimers.Remove(player.userID);
-            hoverDelayTimers.Add(player.userID, DateTime.Now);
-        }
+        //// Now, if trying to hover, setup a new delay timer for the next keystroke.
+        //if (dohover)
+        //{
+        //    DoLog("Resetting hover delay timer");
+        //    hoverDelayTimers.Remove(player.userID);
+        //    hoverDelayTimers.Add(player.userID, DateTime.Now);
+        //}
 
-        // Process hover or stablize
-        if (storedData.playerattackID.ContainsKey(player.userID) && attack?.net.ID.Value == storedData.playerattackID[player.userID].Value)
-        {
-            if (dohover && player != attack?.GetDriver() && !configData.Global.PassengerCanToggleHover)
-            {
-                Message(player, "NoPassengerToggle");
-                return;
-            }
+        //// Process hover or stablize
+        //if (storedData.playerattackID.ContainsKey(player.userID) && attack?.net.ID.Value == storedData.playerattackID[player.userID].Value)
+        //{
+        //    if (dohover && player != attack?.GetDriver() && !configData.Global.PassengerCanToggleHover)
+        //    {
+        //        Message(player, "NoPassengerToggle");
+        //        return;
+        //    }
 
-            if (attack.IsEngineOn() && attack.GetDriver())
-            {
-                int iid = attack.GetInstanceID();
-                DoLog($"Hovers contains {iid}: {hovers.ContainsKey(iid)}");
-                if (stabilize && hovers.ContainsKey(iid) && hovers[iid].isHovering)
-                {
-                    DoLog($"Stabilizing {attack.net.ID}");
-                    hovers[iid]?.Stabilize();
-                }
-                else if (dohover && hovers.ContainsKey(iid))
-                {
-                    DoLog($"Toggling hover for {attack.net.ID}");
-                    hovers[iid]?.ToggleHover();
-                }
-            }
-        }
+        //    //if (attack.IsEngineOn() && attack.GetDriver())
+        //    //{
+        //    //    int iid = attack.GetInstanceID();
+        //    //    DoLog($"Hovers contains {iid}: {hovers.ContainsKey(iid)}");
+        //    //    if (stabilize && hovers.ContainsKey(iid) && hovers[iid].isHovering)
+        //    //    {
+        //    //        DoLog($"Stabilizing {attack.net.ID}");
+        //    //        hovers[iid]?.Stabilize();
+        //    //    }
+        //    //    else if (dohover && hovers.ContainsKey(iid))
+        //    //    {
+        //    //        DoLog($"Toggling hover for {attack.net.ID}");
+        //    //        hovers[iid]?.ToggleHover();
+        //    //    }
+        //    //}
+        //}
     }
 
     private object OnEngineStart(AttackHelicopter attack)
@@ -502,8 +503,8 @@ public class MyAttackCopter : RustScript
                             mounted.DismountObject();
                             mounted.MovePosition(player_pos);
                             mounted.SendNetworkUpdateImmediate(false);
-                            mounted.ClientRPCPlayer(null, player, "ForcePositionTo", player_pos);
-                            mountPointInfo.mountable._mounted = null;
+                            mounted.ClientRPC(RpcTarget.Player("ForcePositionTo", mounted));
+                            mountPointInfo.mountable.DismountAllPlayers();
                         }
                     }
                 }
@@ -541,43 +542,6 @@ public class MyAttackCopter : RustScript
         else
         {
             Message(player, "NoFoundMsg");
-        }
-    }
-
-    [Command("hheli")]
-    private void HoverMyAttackcopterCommand(BasePlayer player, string command, string[] args)
-    {
-        if (!Permissions.UserHasPermission(AttackcopterCanHover, player.UserIDString))
-        {
-            Message(player, "NoPermMsg");
-            return;
-        }
-        ulong playerId = ulong.Parse(player.UserIDString);
-        if (hoverDelayTimers.ContainsKey(playerId))
-        {
-            if (DateTime.Now - hoverDelayTimers[playerId] < TimeSpan.FromMilliseconds(1000))
-            {
-                return;
-            }
-            hoverDelayTimers.Remove(playerId);
-        }
-        hoverDelayTimers.Add(playerId, DateTime.Now);
-
-        PlayerHelicopter attack = (player)?.GetMountedVehicle() as PlayerHelicopter;
-        if (attack == null) return;
-        if (storedData.playerattackID.ContainsKey(playerId) && attack.net.ID.Value == storedData.playerattackID[playerId].Value)
-        {
-            if ((player) != attack.GetDriver() && !configData.Global.PassengerCanToggleHover)
-            {
-                Message(player, "NoPassengerToggle");
-                return;
-            }
-
-            if (attack.IsEngineOn() && attack.GetDriver())
-            {
-                DoLog($"Finding hover object for {attack.net.ID}");
-                hovers[attack.GetInstanceID()]?.ToggleHover();
-            }
         }
     }
 
@@ -710,43 +674,46 @@ public class MyAttackCopter : RustScript
         vehicleAttack.OwnerID = player.userID;
 
         AttackHelicopter attackCopter = vehicleAttack as AttackHelicopter;
-
+        DoLog("Checking fuelPerSec");
+        FieldInfo fuelPerSec = typeof(Minicopter).GetField("fuelPerSec", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        DoLog("Checking fuel system");
+        IFuelSystem fs = attackCopter?.GetComponent<VehicleEngineController<PlayerHelicopter>>()?.FuelSystem;
+        ItemContainer fsinv = fs?.GetInventory();
+        DoLog("Spawning copter");
         vehicleAttack.Spawn();
-        if (Permissions.UserHasPermission(AttackcopterCanHover, player.UserIDString))
-        {
-            hovers.Add(attackCopter.GetInstanceID(), attackCopter.gameObject.AddComponent<Hovering>());
-        }
+        //if (Permissions.UserHasPermission(AttackcopterCanHover, player.UserIDString))
+        //{
+        //    hovers.Add(attackCopter.GetInstanceID(), attackCopter.gameObject.AddComponent<Hovering>());
+        //}
         if (Permissions.UserHasPermission(AttackcopterUnlimited, player.UserIDString) || (vip && vipsettings.unlimited))
         {
             // Set fuel requirements to 0
             DoLog("Setting fuel requirements to zero");
-            attackCopter.fuelPerSec = 0f;
+            fuelPerSec.SetValue(fs, 0);
             if (!configData.Global.allowFuelIfUnlimited && !(vip && vipsettings.canloot))
             {
                 // If the player is not allowed to use the fuel container, add 1 fuel so the copter will start.
                 // Also lock fuel container since there is no point in adding/removing fuel
-                StorageContainer fuelCan = attackCopter?.GetFuelSystem().fuelStorageInstance.Get(true);
-                if (fuelCan?.IsValid() == true)
+                if (fs.IsValidEntityReference() == true)
                 {
-                    ItemManager.CreateByItemID(-946369541, 1)?.MoveToContainer(fuelCan.inventory);
-                    fuelCan.inventory.MarkDirty();
-                    fuelCan.SetFlag(BaseEntity.Flags.Locked, true);
+                    ItemManager.CreateByItemID(-946369541, 1)?.MoveToContainer(fsinv);
+                    fsinv.MarkDirty();
+                    fsinv.SetFlag(ItemContainer.Flag.NoItemInput, true);
                 }
             }
         }
         else if (configData.Global.startingFuel > 0 || (vip && vipsettings.startingFuel > 0))
         {
-            StorageContainer fuelCan = attackCopter?.GetFuelSystem().fuelStorageInstance.Get(true);
-            if (fuelCan?.IsValid() == true)
+            if (fsinv.IsValidEntityReference() == true)
             {
                 float sf = vip ? vipsettings.startingFuel : configData.Global.startingFuel;
-                ItemManager.CreateByItemID(-946369541, Convert.ToInt32(sf))?.MoveToContainer(fuelCan.inventory);
-                fuelCan.inventory.MarkDirty();
+                ItemManager.CreateByItemID(-946369541, Convert.ToInt32(sf))?.MoveToContainer(fsinv);
+                fsinv.MarkDirty();
             }
         }
         else
         {
-            attackCopter.fuelPerSec = vip ? vipsettings.stdFuelConsumption : configData.Global.stdFuelConsumption;
+            fuelPerSec.SetValue(fs, vip ? vipsettings.stdFuelConsumption : configData.Global.stdFuelConsumption);
         }
 
         Message(player, Lang("SpawnedMsg"));
@@ -835,7 +802,7 @@ public class MyAttackCopter : RustScript
             if (storedData.playerattackID.ContainsValue(attack.net.ID))
             {
                 DoLog("    yes, it is...");
-                if (player?.userID.IsSteamId() != true) return true; // Block mounting by NPCs
+                if (player?.UserIDString.IsSteamId() != true) return true; // Block mounting by NPCs
                 BaseVehicle attackmount = BaseNetworkable.serverEntities.Find(attack.net.ID) as BaseVehicle;
                 DoLog($"Does {player.userID} match {attackmount?.OwnerID}, or are they a friend?");
                 if (!Utils.IsFriend(player.userID, attackmount.OwnerID))
@@ -890,7 +857,7 @@ public class MyAttackCopter : RustScript
 
     private object CanDismountEntity(BasePlayer player, BaseMountable mountable)
     {
-        if (player?.userID.IsSteamId() != true) return null;
+        if (player?.UserIDString.IsSteamId() != true) return null;
         AttackHelicopter attack = mountable?.GetComponentInParent<AttackHelicopter>();
         DoLog($"CanDismountEntity: Player {player.userID} wants to dismount seat id {mountable.net.ID}");
 
@@ -983,7 +950,7 @@ public class MyAttackCopter : RustScript
             currentMounts.Remove(entity.net.ID.Value);
             currentMounts.Remove(entity.net.ID.Value + 1);
             currentMounts.Remove(entity.net.ID.Value + 2);
-            hovers.Remove(entity.GetInstanceID());
+            //hovers.Remove(entity.GetInstanceID());
             SaveData();
         }
     }
@@ -1029,7 +996,7 @@ public class MyAttackCopter : RustScript
     private void OnPlayerDisconnected(BasePlayer player, string reason)
     {
         if (!configData.Global.killOnSleep) return;
-        if (player?.userID.IsSteamId() != true) return;
+        if (player?.UserIDString.IsSteamId() != true) return;
 
         if (storedData.playerattackID.ContainsKey(player.userID))
         {
@@ -1070,7 +1037,7 @@ public class MyAttackCopter : RustScript
 
     private void GetVIPSettings(BasePlayer player, out VIPSettings vipsettings)
     {
-        if (player?.userID.IsSteamId() != true)
+        if (player?.UserIDString.IsSteamId() != true)
         {
             DoLog("User has no VIP settings");
             vipsettings = null;
@@ -1234,159 +1201,159 @@ public class MyAttackCopter : RustScript
     #endregion
 
     #region Hover
-    private class Hovering : MonoBehaviour
-    {
-        // Portions borrowed from HelicopterHover plugin but modified
-        private PlayerHelicopter _helicopter;
-        AttackHelicopter _attackcopter;
-        Rigidbody _rb;
+    //private class Hovering : MonoBehaviour
+    //{
+    //    // Portions borrowed from HelicopterHover plugin but modified
+    //    private PlayerHelicopter _helicopter;
+    //    AttackHelicopter _attackcopter;
+    //    Rigidbody _rb;
 
-        Timer _timedHoverTimer;
-        Timer _fuelUseTimer;
+    //    Timer _timedHoverTimer;
+    //    Timer _fuelUseTimer;
 
-        Coroutine _hoverCoroutine;
-        VehicleEngineController<AttackHelicopter> _engineController;
+    //    Coroutine _hoverCoroutine;
+    //    VehicleEngineController<AttackHelicopter> _engineController;
 
-        public bool isHovering => _rb.constraints == RigidbodyConstraints.FreezePositionY;
+    //    public bool isHovering => _rb.constraints == RigidbodyConstraints.FreezePositionY;
 
-        public void Awake()
-        {
-            if (!TryGetComponent(out _helicopter))
-            {
-                Instance.DoLog("Failed to get BHV component for MyAttackCopter");
-                Instance.hovers.Remove(_helicopter.GetInstanceID());
-                DestroyImmediate(this);
-                return;
-            }
-            if (!TryGetComponent(out _rb))
-            {
-                Instance.DoLog("Failed to get RB component for MyAttackCopter");
-                Instance.hovers.Remove(_helicopter.GetInstanceID());
-                DestroyImmediate(this);
-                return;
-            }
-            _attackcopter = GetComponent<AttackHelicopter>();
-            _engineController = _attackcopter?.gameObject.GetComponent<VehicleEngineController<AttackHelicopter>>();
-        }
+    //    public void Awake()
+    //    {
+    //        if (!TryGetComponent(out _helicopter))
+    //        {
+    //            Instance.DoLog("Failed to get BHV component for MyAttackCopter");
+    //            Instance.hovers.Remove(_helicopter.GetInstanceID());
+    //            DestroyImmediate(this);
+    //            return;
+    //        }
+    //        if (!TryGetComponent(out _rb))
+    //        {
+    //            Instance.DoLog("Failed to get RB component for MyAttackCopter");
+    //            Instance.hovers.Remove(_helicopter.GetInstanceID());
+    //            DestroyImmediate(this);
+    //            return;
+    //        }
+    //        _attackcopter = GetComponent<AttackHelicopter>();
+    //        _engineController = _attackcopter?.gameObject.GetComponent<VehicleEngineController<AttackHelicopter>>();
+    //    }
 
-        public void ToggleHover()
-        {
-            Instance.DoLog("ToggleHover");
-            if (isHovering) StopHover();
-            else StartHover();
+    //    public void ToggleHover()
+    //    {
+    //        Instance.DoLog("ToggleHover");
+    //        if (isHovering) StopHover();
+    //        else StartHover();
 
-            foreach (BaseVehicle.MountPointInfo info in _helicopter.mountPoints)
-            {
-                BasePlayer player = info.mountable.GetMounted();
-                //if (player != null) Instance.ChatPlayerOnline(player, lang.GetMessage(isHovering ? "HoverEnabled" : "HoverDisabled", Instance, player.UserIDString));
-            }
-        }
+    //        foreach (BaseVehicle.MountPointInfo info in _helicopter.mountPoints)
+    //        {
+    //            BasePlayer player = info.mountable.GetMounted();
+    //            //if (player != null) Instance.ChatPlayerOnline(player, lang.GetMessage(isHovering ? "HoverEnabled" : "HoverDisabled", Instance, player.UserIDString));
+    //        }
+    //    }
 
-        public void StartHover()
-        {
-            Instance.DoLog("StartHover");
-            _rb.constraints = RigidbodyConstraints.FreezePositionY;
-            Instance.DoLog("Setting Freeze Rotation");
-            if (!Instance.configData.Global.EnableRotationOnHover) _rb.freezeRotation = true;
+    //    public void StartHover()
+    //    {
+    //        Instance.DoLog("StartHover");
+    //        _rb.constraints = RigidbodyConstraints.FreezePositionY;
+    //        Instance.DoLog("Setting Freeze Rotation");
+    //        if (!Instance.configData.Global.EnableRotationOnHover) _rb.freezeRotation = true;
 
-            Instance.DoLog("Finishing Engine Start");
-            _engineController?.FinishStartingEngine();
+    //        Instance.DoLog("Finishing Engine Start");
+    //        _engineController?.FinishStartingEngine();
 
-            Instance.DoLog("Starting Hover Coroutine");
-            if (_helicopter != null) _hoverCoroutine = ServerMgr.Instance.StartCoroutine(HoveringCoroutine());
-        }
+    //        Instance.DoLog("Starting Hover Coroutine");
+    //        if (_helicopter != null) _hoverCoroutine = ServerMgr.Instance.StartCoroutine(HoveringCoroutine());
+    //    }
 
-        public void StopHover()
-        {
-            Instance.DoLog("StopHover");
-            _rb.constraints = RigidbodyConstraints.None;
-            Instance.DoLog("Disabling Freeze Rotation");
-            _rb.freezeRotation = false;
+    //    public void StopHover()
+    //    {
+    //        Instance.DoLog("StopHover");
+    //        _rb.constraints = RigidbodyConstraints.None;
+    //        Instance.DoLog("Disabling Freeze Rotation");
+    //        _rb.freezeRotation = false;
 
-            Instance.DoLog("Stopping Hover Coroutine");
-            if (_hoverCoroutine != null) ServerMgr.Instance.StopCoroutine(_hoverCoroutine);
-            if (_timedHoverTimer != null) _timedHoverTimer.Destroy();
-            if (_fuelUseTimer != null) _fuelUseTimer.Destroy();
-        }
+    //        Instance.DoLog("Stopping Hover Coroutine");
+    //        if (_hoverCoroutine != null) ServerMgr.Instance.StopCoroutine(_hoverCoroutine);
+    //        if (_timedHoverTimer != null) _timedHoverTimer.Destroy();
+    //        if (_fuelUseTimer != null) _fuelUseTimer.Destroy();
+    //    }
 
-        IEnumerator HoveringCoroutine() //Keep engine running and manage fuel
-        {
-            if (Instance.configData.Global.TimedHover) _timedHoverTimer = Instance.timer.Once(Instance.configData.Global.HoverDuration, () => StopHover());
+    //    IEnumerator HoveringCoroutine() //Keep engine running and manage fuel
+    //    {
+    //        if (Instance.configData.Global.TimedHover) _timedHoverTimer = Instance.timer.Once(Instance.configData.Global.HoverDuration, () => StopHover());
 
-            EntityFuelSystem fuelSystem = _attackcopter?.GetFuelSystem();
-            /* Using GetDriver, the engine will begin stalling and then die in a few seconds if the playerowner moves to the passenger seat.
-             * - The engine stops mid-air, which is not realistic.
-             * - The playerowner can move back and the engine should start again.
-             * Using GetMounted, the engine also stops mid-air.
-             * - The playerowner can move back and restart the engine.
-             * Can optionally just kill the hover if the engine stops for any reason - see FixedUpdate.
-             */
-            BasePlayer player = _helicopter.GetDriver();
+    //        EntityFuelSystem fuelSystem = _attackcopter?.GetFuelSystem();
+    //        /* Using GetDriver, the engine will begin stalling and then die in a few seconds if the playerowner moves to the passenger seat.
+    //         * - The engine stops mid-air, which is not realistic.
+    //         * - The playerowner can move back and the engine should start again.
+    //         * Using GetMounted, the engine also stops mid-air.
+    //         * - The playerowner can move back and restart the engine.
+    //         * Can optionally just kill the hover if the engine stops for any reason - see FixedUpdate.
+    //         */
+    //        BasePlayer player = _helicopter.GetDriver();
 
-            if (fuelSystem != null && !Permissions.UserHasPermission("attackcopter.unlimited", player.UserIDString))
-            {
-                if (Instance.configData.Global.UseFuelOnHover) _fuelUseTimer = Instance.timer.Every(1f, () =>
-                {
-                    if (fuelSystem.HasFuel() && _attackcopter.GetDriver() == null) fuelSystem.TryUseFuel(1f, _attackcopter.fuelPerSec);
-                    else if (!fuelSystem.HasFuel()) _fuelUseTimer.Destroy();
-                });
-            }
+    //        if (fuelSystem != null && !Permissions.UserHasPermission("attackcopter.unlimited", player.UserIDString))
+    //        {
+    //            if (Instance.configData.Global.UseFuelOnHover) _fuelUseTimer = Instance.timer.Every(1f, () =>
+    //            {
+    //                if (fuelSystem.HasFuel() && _attackcopter.GetDriver() == null) fuelSystem.TryUseFuel(1f, _attackcopter.fuelPerSec);
+    //                else if (!fuelSystem.HasFuel()) _fuelUseTimer.Destroy();
+    //            });
+    //        }
 
-            //Keep engine on
-            while (isHovering)
-            {
-                if (!(_engineController?.IsOn ?? false) && (_helicopter.AnyMounted() || !Instance.configData.Global.DisableHoverOnDismount)) _engineController?.FinishStartingEngine();
+    //        //Keep engine on
+    //        while (isHovering)
+    //        {
+    //            if (!(_engineController?.IsOn ?? false) && (_helicopter.AnyMounted() || !Instance.configData.Global.DisableHoverOnDismount)) _engineController?.FinishStartingEngine();
 
-                if (fuelSystem != null)
-                {
-                    if (!fuelSystem.HasFuel() && !Permissions.UserHasPermission("attackcopter.unlimited", player.UserIDString)) //If no fuel, stop hovering
-                    {
-                        StopHover();
-                        _engineController?.StopEngine();
+    //            if (fuelSystem != null)
+    //            {
+    //                if (!fuelSystem.HasFuel() && !Permissions.UserHasPermission("attackcopter.unlimited", player.UserIDString)) //If no fuel, stop hovering
+    //                {
+    //                    StopHover();
+    //                    _engineController?.StopEngine();
 
-                        yield break;
-                    }
-                }
+    //                    yield break;
+    //                }
+    //            }
 
-                yield return null;
-            }
-        }
+    //            yield return null;
+    //        }
+    //    }
 
-        public void Stabilize()
-        {
-            if (!isHovering) return;
-            Instance.DoLog("Fixing rotation to stabilize position");
-            Quaternion q = Quaternion.FromToRotation(_attackcopter.transform.up, Vector3.up) * _attackcopter.transform.rotation;
-            _attackcopter.transform.rotation = Quaternion.Slerp(_attackcopter.transform.rotation, q, Time.deltaTime * 3.5f);
-        }
+    //    public void Stabilize()
+    //    {
+    //        if (!isHovering) return;
+    //        Instance.DoLog("Fixing rotation to stabilize position");
+    //        Quaternion q = Quaternion.FromToRotation(_attackcopter.transform.up, Vector3.up) * _attackcopter.transform.rotation;
+    //        _attackcopter.transform.rotation = Quaternion.Slerp(_attackcopter.transform.rotation, q, Time.deltaTime * 3.5f);
+    //    }
 
-        private void FixedUpdate()
-        {
-            bool found = false;
-            foreach (BaseVehicle.MountPointInfo info in _helicopter.mountPoints)
-            {
-                if (info.mountable.GetMounted())
-                {
-                    found = true;
-                }
-            }
+    //    private void FixedUpdate()
+    //    {
+    //        bool found = false;
+    //        foreach (BaseVehicle.MountPointInfo info in _helicopter.mountPoints)
+    //        {
+    //            if (info.mountable.GetMounted())
+    //            {
+    //                found = true;
+    //            }
+    //        }
 
-            if (!found && isHovering && Instance.configData.Global.DisableHoverOnDismount)
-            {
-                StopHover();
-            }
-            else if (_engineController.IsOff && isHovering && !Instance.configData.Global.HoverWithoutEngine)
-            {
-                StopHover();
-            }
-        }
+    //        if (!found && isHovering && Instance.configData.Global.DisableHoverOnDismount)
+    //        {
+    //            StopHover();
+    //        }
+    //        else if (_engineController.IsOff && isHovering && !Instance.configData.Global.HoverWithoutEngine)
+    //        {
+    //            StopHover();
+    //        }
+    //    }
 
-        private void OnDestroy() //Stop any timers or coroutines persisting after destruction or plugin unload
-        {
-            if (_hoverCoroutine != null) ServerMgr.Instance.StopCoroutine(_hoverCoroutine);
-            _timedHoverTimer?.Destroy();
-            _fuelUseTimer?.Destroy();
-        }
-    }
+    //    private void OnDestroy() //Stop any timers or coroutines persisting after destruction or plugin unload
+    //    {
+    //        if (_hoverCoroutine != null) ServerMgr.Instance.StopCoroutine(_hoverCoroutine);
+    //        _timedHoverTimer?.Destroy();
+    //        _fuelUseTimer?.Destroy();
+    //    }
+    //}
     #endregion
 }
