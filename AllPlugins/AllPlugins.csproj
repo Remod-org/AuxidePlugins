@@ -505,48 +505,64 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="R:\auxideplugins\AuxideBots.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\MyBicycle.cs">
+      <Link>MyBicycle.cs</Link>
+    </Compile>
+    <Compile Include="R:\AuxidePlugins\AllPlugins\Backpacks.cs">
+      <Link>Backpacks.cs</Link>
+    </Compile>
+    <Compile Include="R:\AuxidePlugins\AllPlugins\AuxideBots.cs">
       <Link>AuxideBots.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\MyMiniCopter.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\MyMiniCopter.cs">
       <Link>MyMiniCopter.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\EntityInfo.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\EntityInfo.cs">
       <Link>EntityInfo.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\FlyingCarpet.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\FlyingCarpet.cs">
       <Link>FlyingCarpet.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\DayNight.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\DayNight.cs">
       <Link>DayNight.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\Economics.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\Economics.cs">
       <Link>Economics.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\Kits.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\Kits.cs">
       <Link>Kits.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\LootProtect.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\LootProtect.cs">
       <Link>LootProtect.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\PermissionsManager.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\PermissionsManager.cs">
       <Link>PermissionsManager.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\Teleportication.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\Teleportication.cs">
       <Link>Teleportication.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\MyAttackCopter.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\MyAttackCopter.cs">
       <Link>MyAttackCopter.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\NextGenPVE.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\NextGenPVE.cs">
       <Link>NextGenPVE.cs</Link>
     </Compile>
-    <Compile Include="R:\auxideplugins\NoDecay.cs">
+    <Compile Include="R:\AuxidePlugins\AllPlugins\NoDecay.cs">
       <Link>NoDecay.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Stacks.cs" />
-    <Compile Include="TestScript.cs" />
+    <Compile Include="R:\AuxidePlugins\AllPlugins\Stacks.cs">
+      <Link>Stacks.cs</Link>
+    </Compile>
+    <Compile Include="R:\AuxidePlugins\AllPlugins\TestScript.cs">
+      <Link>TestScript.cs</Link>
+    </Compile>
+    <Compile Include="R:\AuxidePlugins\AllPlugins\ZoneManager.cs">
+      <Link>ZoneManager.cs</Link>
+    </Compile>
+    <Compile Include="R:\AuxidePlugins\AllPlugins\TinCanBoom.cs">
+      <Link>TinCanBoom.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
