@@ -1,4 +1,4 @@
-﻿#region License (GPL v2)
+#region License (GPL v2)
 /*
     DESCRIPTION
     Copyright (c) 2022 RFC1920 <desolationoutpostpve@gmail.com>
@@ -24,9 +24,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class HNoDecay : RustScript
+public class NoDecay : RustScript
 {
-    public HNoDecay()
+    public NoDecay()
     {
         Author = "RFC1920";
         Description = "NoDecay for Auxide";
@@ -227,6 +227,18 @@ public class HNoDecay : RustScript
         data.WriteObject("entityinfo", entityinfo);
         data.WriteObject("lastconnected", lastConnected);
         data.WriteObject("disabled", disabled);
+    }
+
+    public object OnDecayDamage(DecayEntity entity)
+    {
+        DoLog("OnDecayDamage called");
+        return null;
+    }
+
+    public object OnDecayHeal(DecayEntity entity)
+    {
+        DoLog("OnDecayHeal called");
+        return null;
     }
 
     public object OnTakeDamage(BaseCombatEntity entity, HitInfo hitInfo)

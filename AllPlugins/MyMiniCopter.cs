@@ -44,12 +44,12 @@
  */
 #endregion
 using Auxide;
-using UnityEngine;
-using System.Collections.Generic;
 using System;
-using System.Linq;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 [Info("My Mini Copter", "RFC1920", "0.1.0")]
 [Description("Spawn a MiniCopter")]
@@ -245,7 +245,7 @@ public class MyMiniCopter : RustScript
 
     private void OnPlayerInput(BasePlayer player, InputState input)
     {
-        if (player?.userID.IsSteamId() != true || input == null) return;
+        if (player?.UserIDString.IsSteamId() != true || input == null) return;
         if (!configData.Global.UseKeystrokeForHover) return;
         if (!Permissions.UserHasPermission(MinicopterCanHover, player.UserIDString)) return;
         //if (input.current.buttons > 0) DoLog($"OnPlayerInput: {input.current.buttons}");
@@ -857,7 +857,7 @@ public class MyMiniCopter : RustScript
             if (storedData.playerminiID.ContainsValue(mini.net.ID))
             {
                 DoLog("    yes, it is...");
-                if (player?.userID.IsSteamId() != true) return true; // Block mounting by NPCs
+                if (player?.UserIDString.IsSteamId() != true) return true; // Block mounting by NPCs
                 BaseVehicle minimount = BaseNetworkable.serverEntities.Find(mini.net.ID) as BaseVehicle;
                 DoLog($"Does {player.userID} match {minimount?.OwnerID}, or are they a friend?");
                 if (!Utils.IsFriend(player.userID, minimount.OwnerID))
@@ -912,7 +912,7 @@ public class MyMiniCopter : RustScript
 
     private object CanDismountEntity(BasePlayer player, BaseMountable mountable)
     {
-        if (player?.userID.IsSteamId() != true) return null;
+        if (player?.UserIDString.IsSteamId() != true) return null;
         Minicopter mini = mountable?.GetComponentInParent<Minicopter>();
         DoLog($"CanDismountEntity: Player {player.userID} wants to dismount seat id {mountable.net.ID}");
 
@@ -1051,7 +1051,7 @@ public class MyMiniCopter : RustScript
     private void OnPlayerDisconnected(BasePlayer player, string reason)
     {
         if (!configData.Global.killOnSleep) return;
-        if (player?.userID.IsSteamId() != true) return;
+        if (player?.UserIDString.IsSteamId() != true) return;
 
         if (storedData.playerminiID.ContainsKey(player.userID))
         {
@@ -1092,7 +1092,7 @@ public class MyMiniCopter : RustScript
 
     private void GetVIPSettings(BasePlayer player, out VIPSettings vipsettings)
     {
-        if (player?.userID.IsSteamId() != true)
+        if (player?.UserIDString.IsSteamId() != true)
         {
             DoLog("User has no VIP settings");
             vipsettings = null;

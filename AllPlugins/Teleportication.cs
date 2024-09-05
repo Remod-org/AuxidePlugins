@@ -36,7 +36,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using Auxide.Scripting;
 
-[Info("HTeleportication", "RFC1920", "1.0.4")]
+[Info("Teleportication", "RFC1920", "1.0.4")]
 [Description("A version of Teleportication for Auxide")]
 internal class Teleportication : RustScript
 {

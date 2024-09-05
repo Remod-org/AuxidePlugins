@@ -1,4 +1,4 @@
-﻿using Auxide;
+using Auxide;
 using System;
 using System.Linq;
 using System.Globalization;

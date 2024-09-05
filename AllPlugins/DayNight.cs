@@ -1,4 +1,4 @@
-﻿[Info("HDayNight", "RFC1920", "1.0.1")]
+[Info("HDayNight", "RFC1920", "1.0.1")]
 [Description("Provides day, night, and timeset/settime commands, with a limit timer.")]
 public class DayNight : RustScript
 {
