@@ -505,6 +505,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="R:\AuxidePlugins\AllPlugins\ForeverBackpack.cs">
+      <Link>ForeverBackpack.cs</Link>
+    </Compile>
+    <Compile Include="R:\AuxidePlugins\AllPlugins\Horses.cs">
+      <Link>Horses.cs</Link>
+    </Compile>
     <Compile Include="R:\AuxidePlugins\AllPlugins\MyBicycle.cs">
       <Link>MyBicycle.cs</Link>
     </Compile>
